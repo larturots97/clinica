@@ -20,10 +20,16 @@ $zonasActivas = $tratamiento->zonasPredefinidas->pluck('zona')->toArray();
         Grupo {{ $tratamiento->grupo }} — {{ $grupoNombres[$tratamiento->grupo] ?? '' }}
     </span>
     @endif
-    <a href="{{ route('medico.tratamientos-esteticos.pdf', $tratamiento) }}" target="_blank"
-        style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#9333ea;color:white;text-decoration:none;">
-        <i class="fa-solid fa-file-pdf"></i> PDF
+    <div style="margin-left:auto;display:flex;gap:8px;">
+    <a href="{{ route('medico.tratamientos-esteticos.consentimiento', $tratamiento) }}" target="_blank"
+        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#0f766e;color:white;text-decoration:none;">
+        <i class="fa-solid fa-file-signature"></i> Consentimiento
     </a>
+    <a href="{{ route('medico.tratamientos-esteticos.pdf', $tratamiento) }}" target="_blank"
+        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#9333ea;color:white;text-decoration:none;">
+        <i class="fa-solid fa-file-pdf"></i> Historia Clínica
+    </a>
+</div>
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 300px;gap:18px;">
@@ -167,6 +173,7 @@ $zonasActivas = $tratamiento->zonasPredefinidas->pluck('zona')->toArray();
     <div style="display:flex;flex-direction:column;gap:14px;">
 
         {{-- MAPA --}}
+        @if((int)($tratamiento->mapa_activo ?? 1) === 1)
         <div style="background:white;border-radius:13px;border:1px solid #e2e8f0;padding:16px;text-align:center;">
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:10px;">Mapa de zonas</div>
             <svg viewBox="0 0 200 290" width="100%" style="max-width:200px;" xmlns="http://www.w3.org/2000/svg">
@@ -202,6 +209,12 @@ $zonasActivas = $tratamiento->zonasPredefinidas->pluck('zona')->toArray();
                 @endforeach
             </svg>
         </div>
+        @elseif($tratamiento->zonas_texto)
+        <div style="background:white;border-radius:13px;border:1px solid #e2e8f0;padding:16px;">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:10px;">Zonas a aplicar</div>
+            <p style="font-size:13px;color:#374151;line-height:1.6;">{{ $tratamiento->zonas_texto }}</p>
+        </div>
+        @endif
 
         {{-- MÉDICO --}}
         <div style="background:white;border-radius:13px;border:1px solid #e2e8f0;padding:18px;">

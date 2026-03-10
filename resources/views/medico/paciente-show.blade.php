@@ -15,6 +15,10 @@
 
 <!-- ACCIONES RÁPIDAS DEL PACIENTE -->
 <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <a href="{{ route('medico.pacientes.edit', $paciente) }}"
+        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#e0f2fe;color:#0284c7;text-decoration:none;">
+        <i class="fa-solid fa-pen-to-square"></i> Editar paciente
+    </a>
     <a href="{{ route('medico.historial.create', ['paciente_id' => $paciente->id]) }}"
         style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#ffe4e6;color:#e11d48;text-decoration:none;">
         <i class="fa-solid fa-file-medical"></i> Nueva consulta
@@ -24,13 +28,13 @@
         <i class="fa-solid fa-prescription"></i> Nueva receta
     </a>
     <a href="#"
-        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#e0f2fe;color:#0284c7;text-decoration:none;">
+        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#d1fae5;color:#059669;text-decoration:none;">
         <i class="fa-solid fa-credit-card"></i> Nuevo pago
     </a>
     @if($esMedicoEstetico)
-    <a href="{{ route('medico.estetica.create', ['paciente_id' => $paciente->id]) }}"
-        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#f3e8ff;color:#9333ea;text-decoration:none;">
-        <i class="fa-solid fa-wand-magic-sparkles"></i> Nuevo tratamiento estético
+    <a href="{{ route('medico.tratamientos-esteticos.create', ['paciente_id' => $paciente->id]) }}"
+        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#fef3c7;color:#92400e;text-decoration:none;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Nuevo tratamiento
     </a>
     @endif
 </div>
@@ -49,7 +53,13 @@
         </div>
 
         <div style="background:white;border-radius:13px;border:1px solid #e2e8f0;padding:18px;">
-            <h4 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:12px;">Datos personales</h4>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <h4 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin:0;">Datos personales</h4>
+                <a href="{{ route('medico.pacientes.edit', $paciente) }}"
+                    style="font-size:11px;color:#0284c7;text-decoration:none;font-weight:600;">
+                    <i class="fa-solid fa-pen-to-square" style="font-size:10px;"></i> Editar
+                </a>
+            </div>
             <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
                 @if($paciente->fecha_nacimiento)
                 <div style="display:flex;justify-content:space-between;">
@@ -182,40 +192,69 @@
             @endforelse
         </div>
 
-        <!-- Tratamientos estéticos (solo si aplica) -->
+        <!-- Historial de Tratamientos -->
         @if($esMedicoEstetico)
         <div style="background:white;border-radius:13px;border:1px solid #e2e8f0;overflow:hidden;">
             <div style="padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">
                 <span style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;">
-                    <span style="width:26px;height:26px;border-radius:7px;background:#f3e8ff;color:#9333ea;display:flex;align-items:center;justify-content:center;">
-                        <i class="fa-solid fa-wand-magic-sparkles" style="font-size:11px;"></i>
+                    <span style="width:26px;height:26px;border-radius:7px;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;">
+                        <i class="fa-solid fa-file-waveform" style="font-size:11px;"></i>
                     </span>
-                    Tratamientos Estéticos
+                    Historial de Tratamientos
                 </span>
-                <a href="{{ route('medico.estetica.create', ['paciente_id' => $paciente->id]) }}"
+                <a href="{{ route('medico.tratamientos-esteticos.create', ['paciente_id' => $paciente->id]) }}"
                     style="font-size:12px;color:#0ea5a0;font-weight:500;text-decoration:none;">
                     + Nuevo tratamiento
                 </a>
             </div>
-            @forelse($tratamientos->take(3) as $tratamiento)
-            <div style="padding:12px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:11px;">
-                <div style="min-width:56px;text-align:center;">
-                    <div style="font-size:12px;font-weight:700;color:#64748b;">{{ \Carbon\Carbon::parse($tratamiento->fecha)->format('d/m/Y') }}</div>
+            <div style="max-height:280px;overflow-y:auto;">
+                @forelse($tratamientos as $trat)
+                <div style="padding:11px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:11px;">
+                    @php
+                        $grupoColors = [
+                            'A' => ['bg'=>'#fef3c7','color'=>'#92400e','label'=>'Neuromo.'],
+                            'B' => ['bg'=>'#dbeafe','color'=>'#1e40af','label'=>'Rellenos'],
+                            'C' => ['bg'=>'#d1fae5','color'=>'#065f46','label'=>'Bioest.'],
+                            'D' => ['bg'=>'#fee2e2','color'=>'#991b1b','label'=>'Lipolít.'],
+                            'E' => ['bg'=>'#f3e8ff','color'=>'#6b21a8','label'=>'Piel'],
+                        ];
+                        $gc = $grupoColors[$trat->grupo] ?? ['bg'=>'#f1f5f9','color'=>'#475569','label'=>$trat->grupo];
+                    @endphp
+                    <div style="min-width:56px;text-align:center;">
+                        <div style="font-size:11px;font-weight:700;color:#64748b;">{{ \Carbon\Carbon::parse($trat->fecha)->format('d/m/Y') }}</div>
+                        <span style="display:inline-block;margin-top:3px;padding:2px 6px;border-radius:5px;font-size:9px;font-weight:700;background:{{ $gc['bg'] }};color:{{ $gc['color'] }};">
+                            {{ $gc['label'] }}
+                        </span>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px;font-weight:600;color:#1e293b;">{{ $trat->titulo ?? 'Historia clínica estética' }}</div>
+                        <div style="font-size:11px;color:#64748b;margin-top:1px;display:flex;align-items:center;gap:8px;">
+                            <span><i class="fa-solid fa-location-dot" style="font-size:9px;"></i> {{ $trat->zonas->count() }} zona(s)</span>
+                            @if($trat->producto_marca)
+                            <span style="color:#b45309;"><i class="fa-solid fa-flask" style="font-size:9px;"></i> {{ $trat->producto_marca }}</span>
+                            @endif
+                            @if($trat->sesion_numero)
+                            <span>Sesión {{ $trat->sesion_numero }}</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:5px;align-items:center;">
+                        <a href="{{ route('medico.tratamientos-esteticos.show', $trat) }}"
+                            style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e;text-decoration:none;">
+                            Historia clínica
+                        </a>
+                        <a href="{{ route('medico.tratamientos-esteticos.pdf', $trat) }}" target="_blank"
+                            style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#f1f5f9;color:#475569;text-decoration:none;">
+                            PDF
+                        </a>
+                    </div>
                 </div>
-                <div style="flex:1;">
-                    <div style="font-size:13px;font-weight:600;">{{ $tratamiento->titulo ?? 'Tratamiento estético' }}</div>
-                    <div style="font-size:11px;color:#64748b;">{{ $tratamiento->zonas->count() }} zona(s) tratada(s)</div>
+                @empty
+                <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">
+                    Sin historias clínicas estéticas registradas
                 </div>
-                <a href="{{ route('medico.estetica.show', $tratamiento) }}"
-                    style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#f3e8ff;color:#9333ea;text-decoration:none;">
-                    Ver mapa
-                </a>
+                @endforelse
             </div>
-            @empty
-            <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">
-                Sin tratamientos estéticos registrados
-            </div>
-            @endforelse
         </div>
         @endif
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\TipoTratamiento;
 
 class Cita extends Model
 {
@@ -18,6 +19,10 @@ class Cita extends Model
         'motivo',
         'estado',
         'notas',
+        'tipo_tratamiento_id',
+        'telefono_paciente',
+        'email_paciente',
+        'recordatorio_enviado',
     ];
 
     protected $casts = [
@@ -37,6 +42,10 @@ class Cita extends Model
     public function medico()
     {
         return $this->belongsTo(Medico::class);
+    }
+    public function tipoTratamiento()
+    {
+        return $this->belongsTo(TipoTratamiento::class);
     }
 
     public function estaActiva()

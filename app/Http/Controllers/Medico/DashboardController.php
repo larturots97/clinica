@@ -7,6 +7,7 @@ use App\Models\Cita;
 use App\Models\Historial;
 use App\Models\Receta;
 use App\Models\TratamientoEstetico;
+use App\Models\Producto;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -55,6 +56,13 @@ class DashboardController extends Controller
                 ->count();
         }
 
+        // Productos con stock mínimo alcanzado
+        $productosStockBajo = Producto::where('clinica_id', $medico->clinica_id)
+            ->where('activo', true)
+            ->whereColumn('stock_actual', '<=', 'stock_minimo')
+            ->orderBy('stock_actual')
+            ->get();
+
         return view('medico.dashboard', compact(
             'medico',
             'citasHoy',
@@ -63,7 +71,8 @@ class DashboardController extends Controller
             'totalPacientesMes',
             'totalRecetasMes',
             'totalTratamientosMes',
-            'esMedicoEstetico'
+            'esMedicoEstetico',
+            'productosStockBajo'
         ));
     }
 }

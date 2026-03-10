@@ -6,7 +6,7 @@
 
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
     <h3 class="font-serif" style="font-size:21px;">Mis Pacientes</h3>
-    <a href="{{ route('pacientes.create') }}"
+    <a href="{{ route('medico.pacientes.create') }}"
         style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;background:#0ea5a0;color:white;text-decoration:none;">
         <i class="fa-solid fa-plus"></i> Nuevo paciente
     </a>

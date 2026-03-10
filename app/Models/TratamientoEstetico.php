@@ -16,10 +16,14 @@ class TratamientoEstetico extends Model
         'fecha', 'titulo', 'grupo', 'tipo_clave', 'motivo_consulta',
         'fitzpatrick', 'tipo_piel', 'condiciones_piel', 'antecedentes',
         'simetria', 'tonicidad', 'tecnica', 'profundidad',
+        'producto_id', 'producto_cantidad',
         'producto_marca', 'producto_lote', 'producto_caducidad',
         'sesion_numero', 'intervalo', 'volumen_total', 'unidad_volumen',
         'objetivo', 'observaciones_generales', 'observaciones_post',
         'consentimiento_idioma', 'consentimiento_entrega', 'campos_extra',
+        'peso', 'talla', 'temperatura', 'tension_arterial',
+        'frecuencia_cardiaca', 'saturacion_o2', 'exploracion_fisica',
+        'mapa_activo', 'zonas_texto',
     ];
 
     protected $casts = [
@@ -49,6 +53,12 @@ class TratamientoEstetico extends Model
     public function tipoTratamiento()
     {
         return $this->belongsTo(TipoTratamiento::class, 'tipo_tratamiento_id');
+    }
+
+    // ── Relación con inventario ──────────────────────────────────
+    public function producto()
+    {
+        return $this->belongsTo(Producto::class);
     }
 
     public function zonas()

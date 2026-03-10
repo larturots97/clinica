@@ -44,10 +44,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/agenda', [\App\Http\Controllers\Medico\AgendaController::class, 'index'])->name('agenda.index');
         Route::put('/agenda/{cita}', [\App\Http\Controllers\Medico\AgendaController::class, 'update'])->name('agenda.update');
 
-        // Pacientes
+        // Pacientes (create ANTES de {paciente})
         Route::get('/pacientes', [\App\Http\Controllers\Medico\PacienteController::class, 'index'])->name('pacientes.index');
+        Route::get('/pacientes/create', [\App\Http\Controllers\Medico\PacienteController::class, 'create'])->name('pacientes.create');
+        Route::post('/pacientes', [\App\Http\Controllers\Medico\PacienteController::class, 'store'])->name('pacientes.store');
+        Route::get('/pacientes/{paciente}/edit', [\App\Http\Controllers\Medico\PacienteController::class, 'edit'])->name('pacientes.edit');
+        Route::put('/pacientes/{paciente}', [\App\Http\Controllers\Medico\PacienteController::class, 'update'])->name('pacientes.update');
         Route::get('/pacientes/{paciente}', [\App\Http\Controllers\Medico\PacienteController::class, 'show'])->name('pacientes.show');
-
         // Historial
         Route::get('/historial', [\App\Http\Controllers\Medico\HistorialController::class, 'index'])->name('historial.index');
         Route::get('/historial/create', [\App\Http\Controllers\Medico\HistorialController::class, 'create'])->name('historial.create');
@@ -77,7 +80,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/perfil/logo', [\App\Http\Controllers\Medico\PagoController::class, 'subirLogo'])->name('perfil.logo');
         Route::post('/perfil/firma', [\App\Http\Controllers\Medico\PagoController::class, 'subirFirma'])->name('perfil.firma');
 
-        // ── Tipos de Tratamiento (catálogo del médico) ──
+        // Tipos de Tratamiento
         Route::get('/tipo-tratamientos', [\App\Http\Controllers\Medico\TipoTratamientoController::class, 'index'])->name('tipo-tratamientos.index');
         Route::get('/tipo-tratamientos/create', [\App\Http\Controllers\Medico\TipoTratamientoController::class, 'create'])->name('tipo-tratamientos.create');
         Route::post('/tipo-tratamientos', [\App\Http\Controllers\Medico\TipoTratamientoController::class, 'store'])->name('tipo-tratamientos.store');
@@ -86,13 +89,23 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/tipo-tratamientos/{tipoTratamiento}', [\App\Http\Controllers\Medico\TipoTratamientoController::class, 'destroy'])->name('tipo-tratamientos.destroy');
         Route::post('/tipo-tratamientos/{tipoTratamiento}/toggle', [\App\Http\Controllers\Medico\TipoTratamientoController::class, 'toggleActivo'])->name('tipo-tratamientos.toggle');
 
-        // ── Historia Clínica Estética (nueva) ──
+        // Historia Clínica Estética
         Route::get('/tratamientos-esteticos', [\App\Http\Controllers\Medico\TratamientoEsteticoController::class, 'index'])->name('tratamientos-esteticos.index');
         Route::get('/tratamientos-esteticos/create', [\App\Http\Controllers\Medico\TratamientoEsteticoController::class, 'create'])->name('tratamientos-esteticos.create');
         Route::post('/tratamientos-esteticos', [\App\Http\Controllers\Medico\TratamientoEsteticoController::class, 'store'])->name('tratamientos-esteticos.store');
         Route::get('/tratamientos-esteticos/{tratamientosEstetico}', [\App\Http\Controllers\Medico\TratamientoEsteticoController::class, 'show'])->name('tratamientos-esteticos.show');
         Route::get('/tratamientos-esteticos/{tratamientosEstetico}/edit', [\App\Http\Controllers\Medico\TratamientoEsteticoController::class, 'edit'])->name('tratamientos-esteticos.edit');
         Route::get('/tratamientos-esteticos/{tratamientosEstetico}/pdf', [\App\Http\Controllers\Medico\TratamientoEsteticoController::class, 'pdf'])->name('tratamientos-esteticos.pdf');
+        Route::get('/tratamientos-esteticos/{tratamientosEstetico}/consentimiento', [\App\Http\Controllers\Medico\TratamientoEsteticoController::class, 'consentimiento'])->name('tratamientos-esteticos.consentimiento');
+
+        // Citas
+        Route::get('/citas', [\App\Http\Controllers\Medico\CitaMedicoController::class, 'index'])->name('citas.index');
+        Route::post('/citas', [\App\Http\Controllers\Medico\CitaMedicoController::class, 'store'])->name('citas.store');
+        Route::get('/citas/{cita}', [\App\Http\Controllers\Medico\CitaMedicoController::class, 'show'])->name('citas.show');
+        Route::patch('/citas/{cita}', [\App\Http\Controllers\Medico\CitaMedicoController::class, 'update'])->name('citas.update');
+        Route::delete('/citas/{cita}', [\App\Http\Controllers\Medico\CitaMedicoController::class, 'destroy'])->name('citas.destroy');
+        Route::post('/citas/{cita}/estado', [\App\Http\Controllers\Medico\CitaMedicoController::class, 'cambiarEstado'])->name('citas.estado');
+        Route::get('/citas/{cita}/whatsapp', [\App\Http\Controllers\Medico\CitaMedicoController::class, 'whatsapp'])->name('citas.whatsapp');
     });
 });
 

@@ -65,6 +65,84 @@
 
 </div>
 
+{{-- ALERTA STOCK BAJO --}}
+@if($productosStockBajo->count() > 0)
+<div id="alerta-stock" style="
+    border-radius: 13px;
+    border: 1px solid #fca5a5;
+    border-left: 4px solid #ef4444;
+    background: linear-gradient(135deg, rgba(254,242,242,0.9) 0%, rgba(255,247,237,0.85) 100%);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    box-shadow: 0 2px 12px rgba(239,68,68,0.08);
+    animation: slideInAlert 0.4s ease;
+">
+    <div style="width:36px;height:36px;background:linear-gradient(135deg,#ef4444,#f97316);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(239,68,68,0.3);">
+        <i class="fa-solid fa-triangle-exclamation" style="color:white;font-size:15px;"></i>
+    </div>
+    <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:#991b1b;margin-bottom:4px;">
+            ⚠️ {{ $productosStockBajo->count() }} producto{{ $productosStockBajo->count() > 1 ? 's' : '' }} con stock mínimo alcanzado
+        </div>
+        <div style="font-size:12px;color:#b45309;margin-bottom:10px;">
+            {{ $productosStockBajo->count() === 1 ? 'Este producto requiere' : 'Estos productos requieren' }} reposición pronto para no interrumpir tus tratamientos.
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;">
+            @foreach($productosStockBajo->take(4) as $prod)
+            <span style="
+                display:inline-flex;align-items:center;gap:5px;
+                background:white;
+                border:1.5px solid #fca5a5;
+                border-radius:20px;
+                padding:3px 10px;
+                font-size:11px;font-weight:600;color:#991b1b;
+            ">
+                <span style="width:6px;height:6px;background:#ef4444;border-radius:50%;display:inline-block;animation:pulseDot 1.5s infinite;"></span>
+                {{ $prod->nombre }} &nbsp;·&nbsp; <span style="color:#dc2626;">{{ $prod->stock_actual }} {{ $prod->unidad }}</span>
+            </span>
+            @endforeach
+            @if($productosStockBajo->count() > 4)
+            <span style="background:white;border:1.5px solid #e2e8f0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#64748b;">
+                +{{ $productosStockBajo->count() - 4 }} más
+            </span>
+            @endif
+        </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <a href="{{ route('medico.inventario.index') }}" style="
+            display:inline-flex;align-items:center;gap:5px;
+            background:#ef4444;color:white;
+            font-size:12px;font-weight:700;
+            padding:7px 14px;border-radius:8px;
+            text-decoration:none;
+            box-shadow:0 2px 6px rgba(239,68,68,0.3);
+            transition:background 0.2s;
+        " onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+            <i class="fa-solid fa-boxes-stacked" style="font-size:11px;"></i> Ver inventario
+        </a>
+        <button onclick="document.getElementById('alerta-stock').style.display='none'" style="
+            background:none;border:none;cursor:pointer;
+            color:#94a3b8;font-size:16px;padding:4px;
+            line-height:1;
+        " title="Cerrar">✕</button>
+    </div>
+</div>
+
+<style>
+@keyframes slideInAlert {
+    from { transform: translateY(-8px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes pulseDot {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+}
+</style>
+@endif
+
 <!-- GRID PRINCIPAL -->
 <div style="display:grid;grid-template-columns:1fr 310px;gap:16px;">
 
