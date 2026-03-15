@@ -1,6 +1,8 @@
+<?php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+
 return new class extends Migration
 {
     public function up(): void
@@ -31,17 +33,18 @@ return new class extends Migration
             $table->json('campos_extra')->nullable();
         });
     }
+
     public function down(): void
     {
         Schema::table('tratamientos_esteticos', function (Blueprint $table) {
             $table->dropColumn([
-                'grupo','tipo_clave','motivo_consulta',
-                'fitzpatrick','tipo_piel','condiciones_piel','antecedentes',
-                'simetria','tonicidad','tecnica','profundidad',
-                'producto_marca','producto_lote','producto_caducidad',
-                'sesion_numero','intervalo','volumen_total','unidad_volumen',
-                'objetivo','observaciones_post',
-                'consentimiento_idioma','consentimiento_entrega','campos_extra',
+                'grupo', 'tipo_clave', 'motivo_consulta',
+                'fitzpatrick', 'tipo_piel', 'condiciones_piel', 'antecedentes',
+                'simetria', 'tonicidad', 'tecnica', 'profundidad',
+                'producto_marca', 'producto_lote', 'producto_caducidad',
+                'sesion_numero', 'intervalo', 'volumen_total', 'unidad_volumen',
+                'objetivo', 'observaciones_post',
+                'consentimiento_idioma', 'consentimiento_entrega', 'campos_extra',
             ]);
         });
     }
