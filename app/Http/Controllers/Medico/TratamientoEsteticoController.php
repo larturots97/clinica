@@ -213,14 +213,15 @@ class TratamientoEsteticoController extends Controller
         return view('medico.tratamientos-esteticos.edit', compact('tratamiento', 'tipos', 'medico'));
     }
 
-    public function pdf(TratamientoEstetico $tratamientosEstetico)
+   public function pdf(TratamientoEstetico $tratamientosEstetico)
     {
         $tratamiento = $tratamientosEstetico;
         $tratamiento->load(['paciente', 'tipoTratamiento', 'zonas', 'medico', 'producto']);
 
         $mapaBase64 = $this->generarMapaBase64($tratamiento);
+        $config = \App\Models\ConfiguracionMedico::where('medico_id', $tratamiento->medico_id)->first();
 
-        $pdf = Pdf::loadView('medico.tratamientos-esteticos.pdf', compact('tratamiento', 'mapaBase64'))
+        $pdf = Pdf::loadView('medico.tratamientos-esteticos.pdf', compact('tratamiento', 'mapaBase64', 'config'))
             ->setPaper('letter', 'portrait');
 
         return $pdf->stream('historial-estetico-' . $tratamiento->id . '.pdf');
@@ -230,10 +231,35 @@ class TratamientoEsteticoController extends Controller
         $tratamiento = $tratamientosEstetico;
         $tratamiento->load(['paciente', 'tipoTratamiento', 'medico.clinica', 'producto', 'zonas']);
 
-        $pdf = Pdf::loadView('medico.tratamientos-esteticos.consentimiento-pdf', compact('tratamiento'))
+        $config = \App\Models\ConfiguracionMedico::where('medico_id', $tratamiento->medico_id)->first();
+
+        $pdf = Pdf::loadView('medico.tratamientos-esteticos.consentimiento-pdf', compact('tratamiento', 'config'))
             ->setPaper('letter', 'portrait');
 
         return $pdf->stream('consentimiento-' . $tratamiento->id . '.pdf');
+    }
+   public function guardarFirmaPaciente(Request $request, TratamientoEstetico $tratamientosEstetico)
+    {
+        // Si ya está bloqueado, no permitir cambios
+        if ($tratamientosEstetico->consentimiento_bloqueado) {
+            return response()->json(['error' => 'Este consentimiento ya fue firmado y está bloqueado.'], 403);
+        }
+
+        $request->validate([
+            'firma_paciente' => 'required|string',
+        ]);
+
+        if (!preg_match('/^data:image\/(png|jpeg|jpg);base64,/', $request->firma_paciente)) {
+            return response()->json(['error' => 'Firma inválida'], 422);
+        }
+
+        $tratamientosEstetico->update([
+            'firma_paciente'           => $request->firma_paciente,
+            'firma_paciente_at'        => now(),
+            'consentimiento_bloqueado' => true,
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     private function generarMapaBase64($tratamiento): string
@@ -309,5 +335,13 @@ class TratamientoEsteticoController extends Controller
 SVG;
 
         return 'data:image/svg+xml;base64,' . base64_encode($svg);
+    }
+   public function datosPaciente(Paciente $paciente)
+    {
+        return response()->json([
+            'fitzpatrick'      => $paciente->fitzpatrick,
+            'tipo_piel'        => $paciente->tipo_piel ?? [],
+            'condiciones_piel' => $paciente->condiciones_piel ?? [],
+        ]);
     }
 }

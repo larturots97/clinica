@@ -11,18 +11,23 @@ class Medico extends Model
     protected $table = 'medicos';
 
     protected $fillable = [
-        'clinica_id',
-        'user_id',
-        'especialidad_id',
-        'cedula_profesional',
-        'nombre',
-        'apellidos',
-        'telefono',
-        'foto',
-        'biografia',
-        'activo',
-	'logo', 'firma', 'cedula',
-    ];
+    'clinica_id',
+    'user_id',
+    'especialidad_id',
+    'cedula_profesional',
+    'nombre',
+    'apellidos',
+    'apellido_paterno',
+    'apellido_materno',
+    'telefono',
+    'foto',
+    'biografia',
+    'activo',
+    'logo',
+    'firma',
+    'cedula',
+    'duracion_cita',
+];
 
     protected $casts = [
         'activo' => 'boolean',
@@ -50,6 +55,6 @@ class Medico extends Model
 
     public function getNombreCompletoAttribute()
     {
-        return $this->nombre . ' ' . $this->apellidos;
+        return trim($this->nombre . ' ' . $this->apellido_paterno . ' ' . $this->apellido_materno);
     }
 }

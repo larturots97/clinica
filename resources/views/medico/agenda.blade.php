@@ -47,7 +47,7 @@
         </div>
 
         <div style="flex:1;">
-            <div class="pac-nombre" style="font-size:13px;font-weight:600;">{{ $cita->paciente->nombre_completo }}</div>
+            <div class="pac-nombre" style="font-size:13px;font-weight:600;">{{ $cita->paciente?->nombre_completo ?? $cita->nombre_visitante ?? 'Visitante' }}</div>
             <div class="pac-motivo" style="font-size:11px;color:#64748b;margin-top:1px;">{{ $cita->motivo ?? 'Sin motivo especificado' }}</div>
         </div>
 
@@ -77,7 +77,7 @@
             </select>
         </form>
 
-        <a href="{{ route('medico.pacientes.show', $cita->paciente) }}"
+        <a href="{{ $cita->paciente_id ? route('medico.pacientes.show', $cita->paciente) : '#' }}"
             style="display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:7px;background:#e0f7f6;color:#0ea5a0;font-size:11px;font-weight:600;text-decoration:none;">
             <i class="fa-solid fa-eye" style="font-size:10px;"></i> Ver
         </a>

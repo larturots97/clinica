@@ -10,7 +10,8 @@ $coordsZonas  = ['F'=>[100,74],'GL'=>[100,100],'PGI'=>[52,122],'PGD'=>[148,122],
 $zonasActivas = $tratamiento->zonasPredefinidas->pluck('zona')->toArray();
 @endphp
 
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+{{-- CABECERA --}}
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
     <a href="{{ route('medico.tratamientos-esteticos.index') }}" style="color:#94a3b8;text-decoration:none;">
         <i class="fa-solid fa-arrow-left"></i>
     </a>
@@ -20,18 +21,39 @@ $zonasActivas = $tratamiento->zonasPredefinidas->pluck('zona')->toArray();
         Grupo {{ $tratamiento->grupo }} — {{ $grupoNombres[$tratamiento->grupo] ?? '' }}
     </span>
     @endif
-    <div style="margin-left:auto;display:flex;gap:8px;">
-    <a href="{{ route('medico.tratamientos-esteticos.consentimiento', $tratamiento) }}" target="_blank"
-        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#0f766e;color:white;text-decoration:none;">
-        <i class="fa-solid fa-file-signature"></i> Consentimiento
-    </a>
-    <a href="{{ route('medico.tratamientos-esteticos.pdf', $tratamiento) }}" target="_blank"
-        style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#9333ea;color:white;text-decoration:none;">
-        <i class="fa-solid fa-file-pdf"></i> Historia Clínica
-    </a>
-</div>
+
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+
+        {{-- Consentimiento PDF --}}
+        <a href="{{ route('medico.tratamientos-esteticos.consentimiento', $tratamiento) }}" target="_blank"
+            style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#0f766e;color:white;text-decoration:none;">
+            <i class="fa-solid fa-file-signature"></i> Consentimiento
+        </a>
+
+        {{-- Botón firma paciente --}}
+        @if($tratamiento->consentimiento_bloqueado)
+            <span style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
+                <i class="fas fa-lock"></i> Consentimiento firmado
+            </span>
+        @else
+            <button onclick="abrirFirma()"
+                style="background:#0ea5e9;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"
+                onmouseover="this.style.background='#0284c7'"
+                onmouseout="this.style.background='#0ea5e9'">
+                <i class="fas fa-pen-nib"></i>
+                {{ $tratamiento->firma_paciente ? 'Actualizar firma' : 'Solicitar firma paciente' }}
+            </button>
+        @endif
+
+        {{-- Historia Clínica PDF --}}
+        <a href="{{ route('medico.tratamientos-esteticos.pdf', $tratamiento) }}" target="_blank"
+            style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#9333ea;color:white;text-decoration:none;">
+            <i class="fa-solid fa-file-pdf"></i> Historia Clínica
+        </a>
+    </div>
 </div>
 
+{{-- CONTENIDO --}}
 <div style="display:grid;grid-template-columns:1fr 300px;gap:18px;">
 
     {{-- COLUMNA PRINCIPAL --}}
@@ -172,6 +194,23 @@ $zonasActivas = $tratamiento->zonasPredefinidas->pluck('zona')->toArray();
     {{-- COLUMNA LATERAL --}}
     <div style="display:flex;flex-direction:column;gap:14px;">
 
+        {{-- ESTADO FIRMA PACIENTE --}}
+        @if($tratamiento->firma_paciente)
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:13px;padding:16px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <i class="fas fa-check-circle" style="color:#16a34a;font-size:14px;"></i>
+                <span style="font-size:12px;font-weight:700;color:#166534;">Paciente firmó el consentimiento</span>
+            </div>
+            @if($tratamiento->firma_paciente_at)
+            <p style="font-size:11px;color:#64748b;margin-bottom:8px;">
+                {{ \Carbon\Carbon::parse($tratamiento->firma_paciente_at)->format('d/m/Y H:i') }}
+            </p>
+            @endif
+            <img src="{{ $tratamiento->firma_paciente }}"
+                 style="max-height:50px;max-width:100%;border:1px solid #bbf7d0;border-radius:6px;padding:3px;background:#fff;display:block;">
+        </div>
+        @endif
+
         {{-- MAPA --}}
         @if((int)($tratamiento->mapa_activo ?? 1) === 1)
         <div style="background:white;border-radius:13px;border:1px solid #e2e8f0;padding:16px;text-align:center;">
@@ -232,5 +271,148 @@ $zonasActivas = $tratamiento->zonasPredefinidas->pluck('zona')->toArray();
 
     </div>
 </div>
+
+{{-- MODAL DE FIRMA — solo si el consentimiento NO está bloqueado --}}
+@if(!$tratamiento->consentimiento_bloqueado)
+<div id="modalFirma" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:1.5rem;width:95vw;max-width:680px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <div>
+                <h3 style="font-size:1rem;font-weight:700;color:#0f172a;margin:0;">Firma del Paciente</h3>
+                <p style="font-size:0.8rem;color:#64748b;margin-top:0.2rem;">
+                    {{ $tratamiento->paciente?->nombre }} {{ $tratamiento->paciente?->apellidos }}
+                </p>
+            </div>
+            <button onclick="cerrarFirma()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#64748b;">✕</button>
+        </div>
+
+        @if($tratamiento->firma_paciente)
+        <div style="margin-bottom:1rem;padding:0.75rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;display:flex;align-items:center;gap:0.75rem;">
+            <i class="fas fa-check-circle" style="color:#16a34a;"></i>
+            <div>
+                <p style="font-size:0.8rem;font-weight:600;color:#166534;margin:0;">Paciente ya firmó</p>
+                <p style="font-size:0.75rem;color:#64748b;margin:0;">
+                    {{ $tratamiento->firma_paciente_at ? \Carbon\Carbon::parse($tratamiento->firma_paciente_at)->format('d/m/Y H:i') : '' }}
+                </p>
+            </div>
+            <img src="{{ $tratamiento->firma_paciente }}" style="height:40px;margin-left:auto;border:1px solid #e2e8f0;border-radius:6px;padding:2px;background:#fff;">
+        </div>
+        @endif
+
+        <div style="border:2px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:1rem;">
+            <div style="background:#f8fafc;padding:0.4rem 0.75rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:0.75rem;color:#64748b;">Firme en el área de abajo</span>
+                <button onclick="limpiarFirma()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:0.25rem 0.6rem;font-size:0.72rem;font-weight:600;cursor:pointer;">
+                    <i class="fas fa-trash"></i> Limpiar
+                </button>
+            </div>
+            <canvas id="canvasFirma" style="display:block;width:100%;height:220px;cursor:crosshair;touch-action:none;background:#fff;"></canvas>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+            <button onclick="cerrarFirma()" style="background:#f1f5f9;color:#475569;border:none;padding:0.6rem 1.25rem;border-radius:8px;font-size:0.875rem;font-weight:600;cursor:pointer;">
+                Cancelar
+            </button>
+            <button id="btnGuardarFirma" onclick="guardarFirma()"
+                style="background:#7c3aed;color:#fff;border:none;padding:0.6rem 1.5rem;border-radius:8px;font-size:0.875rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;"
+                onmouseover="this.style.background='#6d28d9'"
+                onmouseout="this.style.background='#7c3aed'">
+                <i class="fas fa-save"></i> Guardar firma
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const RUTA_GUARDAR = "{{ route('medico.tratamientos-esteticos.firma-paciente', $tratamiento) }}";
+    const CSRF = "{{ csrf_token() }}";
+    let canvas, ctx, dibujando = false, ultimoX, ultimoY;
+
+    function init() {
+        canvas = document.getElementById('canvasFirma');
+        const rect = canvas.getBoundingClientRect();
+        canvas.width  = rect.width  || 640;
+        canvas.height = rect.height || 220;
+        ctx = canvas.getContext('2d');
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth   = 2.5;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+
+        canvas.addEventListener('mousedown',  e => { dibujando = true; [ultimoX, ultimoY] = getPos(e); });
+        canvas.addEventListener('mousemove',  e => { if (dibujando) dibujar(e); });
+        canvas.addEventListener('mouseup',    () => dibujando = false);
+        canvas.addEventListener('mouseleave', () => dibujando = false);
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); dibujando = true; [ultimoX, ultimoY] = getPos(e.touches[0]); }, { passive: false });
+        canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (dibujando) dibujar(e.touches[0]); }, { passive: false });
+        canvas.addEventListener('touchend',   () => dibujando = false);
+    }
+
+    function getPos(e) {
+        const r = canvas.getBoundingClientRect();
+        return [
+            (e.clientX - r.left) * (canvas.width  / r.width),
+            (e.clientY - r.top)  * (canvas.height / r.height)
+        ];
+    }
+
+    function dibujar(e) {
+        const [x, y] = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(ultimoX, ultimoY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        [ultimoX, ultimoY] = [x, y];
+    }
+
+    window.abrirFirma = function() {
+        document.getElementById('modalFirma').style.display = 'flex';
+        setTimeout(init, 50);
+    };
+
+    window.cerrarFirma = function() {
+        document.getElementById('modalFirma').style.display = 'none';
+    };
+
+    window.limpiarFirma = function() {
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    window.guardarFirma = async function() {
+        if (!canvas) return;
+        const pixeles = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        if (!pixeles.some((v, i) => i % 4 === 3 && v > 0)) {
+            alert('Por favor dibuja tu firma antes de guardar.');
+            return;
+        }
+        const base64 = canvas.toDataURL('image/png');
+        const btn = document.getElementById('btnGuardarFirma');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        try {
+            const res = await fetch(RUTA_GUARDAR, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify({ firma_paciente: base64 })
+            });
+            const data = await res.json();
+            if (data.success) {
+                cerrarFirma();
+                location.reload();
+            } else {
+                alert(data.error ?? 'Error al guardar la firma.');
+            }
+        } catch(e) {
+            alert('Error de conexión.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Guardar firma';
+        }
+    };
+})();
+</script>
+@endif
 
 @endsection

@@ -24,12 +24,20 @@ class Paciente extends Model
         'alergias',
         'antecedentes',
         'foto',
-        'activo',
+        'activo','fitzpatrick',
+        'tipo_piel',
+        'condiciones_piel',
+        'nota_medica',
+        'antecedentes_extra',
+        'ocupacion',
     ];
 
     protected $casts = [
         'fecha_nacimiento' => 'date',
         'activo' => 'boolean',
+        'tipo_piel'        => 'array',
+        'condiciones_piel' => 'array',
+        'antecedentes_extra' => 'array',
     ];
 
     public function clinica()

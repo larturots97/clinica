@@ -67,20 +67,8 @@
 
 {{-- ALERTA STOCK BAJO --}}
 @if($productosStockBajo->count() > 0)
-<div id="alerta-stock" style="
-    border-radius: 13px;
-    border: 1px solid #fca5a5;
-    border-left: 4px solid #ef4444;
-    background: linear-gradient(135deg, rgba(254,242,242,0.9) 0%, rgba(255,247,237,0.85) 100%);
-    padding: 14px 18px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: flex-start;
-    gap: 13px;
-    box-shadow: 0 2px 12px rgba(239,68,68,0.08);
-    animation: slideInAlert 0.4s ease;
-">
-    <div style="width:36px;height:36px;background:linear-gradient(135deg,#ef4444,#f97316);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(239,68,68,0.3);">
+<div id="alerta-stock" style="border-radius:13px;border:1px solid #fca5a5;border-left:4px solid #ef4444;background:linear-gradient(135deg,rgba(254,242,242,0.9) 0%,rgba(255,247,237,0.85) 100%);padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:13px;box-shadow:0 2px 12px rgba(239,68,68,0.08);">
+    <div style="width:36px;height:36px;background:linear-gradient(135deg,#ef4444,#f97316);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fa-solid fa-triangle-exclamation" style="color:white;font-size:15px;"></i>
     </div>
     <div style="flex:1;min-width:0;">
@@ -88,59 +76,27 @@
             ⚠️ {{ $productosStockBajo->count() }} producto{{ $productosStockBajo->count() > 1 ? 's' : '' }} con stock mínimo alcanzado
         </div>
         <div style="font-size:12px;color:#b45309;margin-bottom:10px;">
-            {{ $productosStockBajo->count() === 1 ? 'Este producto requiere' : 'Estos productos requieren' }} reposición pronto para no interrumpir tus tratamientos.
+            {{ $productosStockBajo->count() === 1 ? 'Este producto requiere' : 'Estos productos requieren' }} reposición pronto.
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:7px;">
             @foreach($productosStockBajo->take(4) as $prod)
-            <span style="
-                display:inline-flex;align-items:center;gap:5px;
-                background:white;
-                border:1.5px solid #fca5a5;
-                border-radius:20px;
-                padding:3px 10px;
-                font-size:11px;font-weight:600;color:#991b1b;
-            ">
-                <span style="width:6px;height:6px;background:#ef4444;border-radius:50%;display:inline-block;animation:pulseDot 1.5s infinite;"></span>
-                {{ $prod->nombre }} &nbsp;·&nbsp; <span style="color:#dc2626;">{{ $prod->stock_actual }} {{ $prod->unidad }}</span>
+            <span style="display:inline-flex;align-items:center;gap:5px;background:white;border:1.5px solid #fca5a5;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#991b1b;">
+                <span style="width:6px;height:6px;background:#ef4444;border-radius:50%;display:inline-block;"></span>
+                {{ $prod->nombre }} · <span style="color:#dc2626;">{{ $prod->stock_actual }} {{ $prod->unidad }}</span>
             </span>
             @endforeach
             @if($productosStockBajo->count() > 4)
-            <span style="background:white;border:1.5px solid #e2e8f0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#64748b;">
-                +{{ $productosStockBajo->count() - 4 }} más
-            </span>
+            <span style="background:white;border:1.5px solid #e2e8f0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:#64748b;">+{{ $productosStockBajo->count() - 4 }} más</span>
             @endif
         </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-        <a href="{{ route('medico.inventario.index') }}" style="
-            display:inline-flex;align-items:center;gap:5px;
-            background:#ef4444;color:white;
-            font-size:12px;font-weight:700;
-            padding:7px 14px;border-radius:8px;
-            text-decoration:none;
-            box-shadow:0 2px 6px rgba(239,68,68,0.3);
-            transition:background 0.2s;
-        " onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+        <a href="{{ route('medico.inventario.index') }}" style="display:inline-flex;align-items:center;gap:5px;background:#ef4444;color:white;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;text-decoration:none;">
             <i class="fa-solid fa-boxes-stacked" style="font-size:11px;"></i> Ver inventario
         </a>
-        <button onclick="document.getElementById('alerta-stock').style.display='none'" style="
-            background:none;border:none;cursor:pointer;
-            color:#94a3b8;font-size:16px;padding:4px;
-            line-height:1;
-        " title="Cerrar">✕</button>
+        <button onclick="document.getElementById('alerta-stock').style.display='none'" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:16px;padding:4px;">✕</button>
     </div>
 </div>
-
-<style>
-@keyframes slideInAlert {
-    from { transform: translateY(-8px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-}
-@keyframes pulseDot {
-    0%,100% { opacity: 1; }
-    50%      { opacity: 0.3; }
-}
-</style>
 @endif
 
 <!-- GRID PRINCIPAL -->
@@ -159,6 +115,11 @@
         </div>
 
         @forelse($citasHoy as $cita)
+        @php
+            $esVisitante = $cita->origen === 'landing' && !$cita->paciente_id;
+            $nombreCita  = $cita->paciente?->nombre_completo ?? $cita->nombre_visitante ?? 'Sin nombre';
+            $inicialCita = strtoupper(substr($nombreCita, 0, 1));
+        @endphp
         <div style="display:flex;align-items:center;gap:11px;padding:12px 18px;border-bottom:1px solid #f1f5f9;transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
             <div style="text-align:center;min-width:48px;">
                 <div style="font-size:13px;font-weight:700;">{{ \Carbon\Carbon::parse($cita->fecha_hora)->format('H:i') }}</div>
@@ -168,8 +129,13 @@
                 {{ $cita->estado === 'en_curso' ? '#10b981' : ($cita->estado === 'confirmada' ? '#0ea5a0' : '#f59e0b') }};">
             </div>
             <div style="flex:1;">
-                <div style="font-size:13px;font-weight:600;">{{ $cita->paciente->nombre_completo }}</div>
-                <div style="font-size:11px;color:#64748b;margin-top:1px;">{{ $cita->motivo ?? 'Sin motivo especificado' }}</div>
+                <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;">
+                    {{ $nombreCita }}
+                    @if($esVisitante)
+                    <span style="background:#ede9fe;color:#7c3aed;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;">WEB</span>
+                    @endif
+                </div>
+                <div style="font-size:11px;color:#64748b;margin-top:1px;">{{ $cita->motivo ?? $cita->motivo_visitante ?? 'Sin motivo especificado' }}</div>
             </div>
             @php
                 $badgeColor = match($cita->estado) {
@@ -206,11 +172,11 @@
                 </span>
             </div>
             <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:7px;">
-                <a href="{{ route('historial.create') }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 7px;border-radius:11px;border:1.5px solid #e2e8f0;background:white;cursor:pointer;transition:all 0.2s;text-decoration:none;" onmouseover="this.style.borderColor='#0ea5a0';this.style.background='#e0f7f6'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
+                <a href="{{ route('medico.historial.create') }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 7px;border-radius:11px;border:1.5px solid #e2e8f0;background:white;cursor:pointer;transition:all 0.2s;text-decoration:none;" onmouseover="this.style.borderColor='#0ea5a0';this.style.background='#e0f7f6'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
                     <span style="width:34px;height:34px;border-radius:9px;background:#ffe4e6;color:#e11d48;display:flex;align-items:center;justify-content:center;">
                         <i class="fa-solid fa-file-medical" style="font-size:14px;"></i>
                     </span>
-                    <span style="font-size:11px;font-weight:600;color:#1e293b;">Nueva consulta</span>
+                    <span style="font-size:11px;font-weight:600;color:#1e293b;">Nueva consulta básica</span>
                 </a>
                 <a href="{{ route('recetas.create') }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 7px;border-radius:11px;border:1.5px solid #e2e8f0;background:white;cursor:pointer;transition:all 0.2s;text-decoration:none;" onmouseover="this.style.borderColor='#0ea5a0';this.style.background='#e0f7f6'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
                     <span style="width:34px;height:34px;border-radius:9px;background:#ede9fe;color:#7c3aed;display:flex;align-items:center;justify-content:center;">
@@ -219,11 +185,11 @@
                     <span style="font-size:11px;font-weight:600;color:#1e293b;">Nueva receta</span>
                 </a>
                 @if($esMedicoEstetico)
-                <a href="{{ route('estetica.create') }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 7px;border-radius:11px;border:1.5px solid #e2e8f0;background:white;cursor:pointer;transition:all 0.2s;text-decoration:none;" onmouseover="this.style.borderColor='#a855f7';this.style.background='#f3e8ff'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
+                <a href="{{ route('medico.tratamientos-esteticos.create') }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 7px;border-radius:11px;border:1.5px solid #e2e8f0;background:white;cursor:pointer;transition:all 0.2s;text-decoration:none;" onmouseover="this.style.borderColor='#a855f7';this.style.background='#f3e8ff'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
                     <span style="width:34px;height:34px;border-radius:9px;background:#f3e8ff;color:#9333ea;display:flex;align-items:center;justify-content:center;">
                         <i class="fa-solid fa-wand-magic-sparkles" style="font-size:14px;"></i>
                     </span>
-                    <span style="font-size:11px;font-weight:600;color:#1e293b;">Tratamiento</span>
+                    <span style="font-size:11px;font-weight:600;color:#1e293b;">Nueva consulta estetica</span>
                 </a>
                 @endif
                 <a href="{{ route('facturas.create') }}" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 7px;border-radius:11px;border:1.5px solid #e2e8f0;background:white;cursor:pointer;transition:all 0.2s;text-decoration:none;" onmouseover="this.style.borderColor='#0ea5a0';this.style.background='#e0f7f6'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='white'">
@@ -246,12 +212,22 @@
                 </span>
             </div>
             @forelse($citasProximas as $cita)
+            @php
+                $esVisitanteProx = $cita->origen === 'landing' && !$cita->paciente_id;
+                $nombreProx = $cita->paciente?->nombre_completo ?? $cita->nombre_visitante ?? 'Sin nombre';
+                $inicialProx = strtoupper(substr($nombreProx, 0, 1));
+            @endphp
             <div style="display:flex;align-items:center;gap:9px;padding:10px 18px;border-bottom:1px solid #f1f5f9;">
-                <div style="width:32px;height:32px;border-radius:50%;background:#e0f7f6;color:#065f5f;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0;">
-                    {{ strtoupper(substr($cita->paciente->nombre, 0, 1)) }}{{ strtoupper(substr($cita->paciente->apellido_paterno ?? '', 0, 1)) }}
+                <div style="width:32px;height:32px;border-radius:50%;background:{{ $esVisitanteProx ? '#ede9fe' : '#e0f7f6' }};color:{{ $esVisitanteProx ? '#7c3aed' : '#065f5f' }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0;">
+                    {{ $inicialProx }}
                 </div>
                 <div style="flex:1;">
-                    <div style="font-size:13px;font-weight:600;">{{ $cita->paciente->nombre_completo }}</div>
+                    <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;">
+                        {{ $nombreProx }}
+                        @if($esVisitanteProx)
+                        <span style="background:#ede9fe;color:#7c3aed;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;">WEB</span>
+                        @endif
+                    </div>
                     <div style="font-size:11px;color:#64748b;">{{ \Carbon\Carbon::parse($cita->fecha_hora)->format('d/m') }} — {{ \Carbon\Carbon::parse($cita->fecha_hora)->format('H:i') }}</div>
                 </div>
             </div>

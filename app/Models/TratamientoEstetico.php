@@ -23,7 +23,8 @@ class TratamientoEstetico extends Model
         'consentimiento_idioma', 'consentimiento_entrega', 'campos_extra',
         'peso', 'talla', 'temperatura', 'tension_arterial',
         'frecuencia_cardiaca', 'saturacion_o2', 'exploracion_fisica',
-        'mapa_activo', 'zonas_texto',
+        'mapa_activo', 'zonas_texto','firma_paciente',
+        'firma_paciente_at','consentimiento_bloqueado',
     ];
 
     protected $casts = [

@@ -52,7 +52,7 @@ label-field{font-size:12px;font-weight:600;color:#374151;display:block;margin-bo
     <div style="display:grid;grid-template-columns:1fr 1fr 120px;gap:14px;">
       <div>
         <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Paciente *</label>
-        <select name="paciente_id" required style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
+        <select name="paciente_id" required onchange="cargarDatosPaciente(this.value)" style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
           <option value="">Seleccionar...</option>
           @foreach($pacientes as $p)
           <option value="{{ $p->id }}" {{ old('paciente_id', $paciente?->id)==$p->id?'selected':'' }}>{{ $p->nombre }} {{ $p->apellidos }}</option>
@@ -433,7 +433,7 @@ label-field{font-size:12px;font-weight:600;color:#374151;display:block;margin-bo
   </div>
 
   {{-- EVALUACIÓN CLÍNICA --}}
-  <div style="background:white;border-radius:13px;border:1px solid #e2e8f0;padding:20px;">
+  <div style="background:white;border-radius:13px;border:1px solid #e2e8f0;padding:20px;" id="cardEvaluacion">
     <h4 style="font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px;">
       <span style="width:26px;height:26px;border-radius:7px;background:#f3e8ff;color:#9333ea;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-microscope" style="font-size:11px;"></i></span>
       Evaluación Clínica
@@ -746,10 +746,11 @@ function selFitz(n,el){
   document.getElementById('fitzInput').value=n;
 }
 
-document.querySelectorAll('.ck-item').forEach(item=>{
-  const cb=item.querySelector('input[type=checkbox]');
-  if(cb&&cb.checked)item.classList.add('on');
-  item.addEventListener('click',()=>{cb.checked=!cb.checked;item.classList.toggle('on',cb.checked);});
+// ── CORREGIDO: usar onclick en lugar de addEventListener para que sea sobreescribible ──
+document.querySelectorAll('.ck-item').forEach(item => {
+  const cb = item.querySelector('input[type=checkbox]');
+  if (cb && cb.checked) item.classList.add('on');
+  item.onclick = () => { cb.checked = !cb.checked; item.classList.toggle('on', cb.checked); };
 });
 
 function setMode(mode){
@@ -866,6 +867,101 @@ function updatePuntosInput(){
   const row=document.getElementById('rowZona'+k);if(row)row.style.background='#faf5ff';
 });
 calcTotal();
+
+// ── CARGA DE DATOS DEL PACIENTE ──────────────────────────────────────────────
+
+async function cargarDatosPaciente(pacienteId) {
+  if (!pacienteId) { desbloquearEvaluacion(); return; }
+  try {
+    const res  = await fetch(`/medico/tratamientos-esteticos/paciente/${pacienteId}/datos`);
+    const data = await res.json();
+    const tieneDatos = data.fitzpatrick || data.tipo_piel?.length || data.condiciones_piel?.length;
+    if (!tieneDatos) { desbloquearEvaluacion(); return; }
+
+    // Fitzpatrick
+    if (data.fitzpatrick) {
+      document.querySelectorAll('#fitzRow .fi-item').forEach((el, i) => {
+        el.style.borderColor = '#e2e8f0';
+        el.style.background  = 'white';
+        el.style.cursor      = 'not-allowed';
+        el.onclick           = null;
+        if ((i + 1) == data.fitzpatrick) {
+          el.style.borderColor = '#9333ea';
+          el.style.background  = '#faf5ff';
+        }
+      });
+      document.getElementById('fitzInput').value = data.fitzpatrick;
+    }
+
+    // Tipo de piel
+    document.querySelectorAll('input[name="tipo_piel[]"]').forEach(cb => {
+      const item   = cb.closest('.ck-item');
+      const activo = data.tipo_piel?.includes(cb.value);
+      cb.checked   = activo;
+      item.classList.toggle('on', activo);
+      item.style.cursor  = 'not-allowed';
+      item.style.opacity = activo ? '1' : '0.4';
+      item.onclick = e => e.preventDefault();
+    });
+
+    // Condiciones de piel
+    document.querySelectorAll('input[name="condiciones_piel[]"]').forEach(cb => {
+      const item   = cb.closest('.ck-item');
+      const activo = data.condiciones_piel?.includes(cb.value);
+      cb.checked   = activo;
+      item.classList.toggle('on', activo);
+      item.style.cursor  = 'not-allowed';
+      item.style.opacity = activo ? '1' : '0.4';
+      item.onclick = e => e.preventDefault();
+    });
+
+    mostrarBannerEvaluacion();
+  } catch(e) {
+    desbloquearEvaluacion();
+  }
+}
+
+function desbloquearEvaluacion() {
+  document.querySelectorAll('#fitzRow .fi-item').forEach((el, i) => {
+    el.style.borderColor = '#e2e8f0';
+    el.style.background  = 'white';
+    el.style.cursor      = 'pointer';
+    el.onclick = function() { selFitz(i + 1, this); };
+  });
+  document.getElementById('fitzInput').value = '';
+
+  document.querySelectorAll('input[name="tipo_piel[]"], input[name="condiciones_piel[]"]').forEach(cb => {
+    const item = cb.closest('.ck-item');
+    cb.checked = false;
+    item.classList.remove('on');
+    item.style.cursor  = 'pointer';
+    item.style.opacity = '1';
+    item.onclick = () => { cb.checked = !cb.checked; item.classList.toggle('on', cb.checked); };
+  });
+
+  quitarBannerEvaluacion();
+}
+
+function mostrarBannerEvaluacion() {
+  quitarBannerEvaluacion();
+  const banner = document.createElement('div');
+  banner.id    = 'banner-evaluacion';
+  banner.style.cssText = 'background:#ede9fe;border:1px solid #c4b5fd;color:#6d28d9;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:7px;';
+  banner.innerHTML = '<i class="fa-solid fa-lock" style="font-size:11px;"></i> Datos de evaluación clínica cargados del expediente — solo lectura';
+  const card = document.getElementById('cardEvaluacion');
+  if (card) card.insertBefore(banner, card.firstChild);
+}
+
+function quitarBannerEvaluacion() {
+  const b = document.getElementById('banner-evaluacion');
+  if (b) b.remove();
+}
+
+// Si hay paciente preseleccionado al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.querySelector('select[name="paciente_id"]');
+  if (sel?.value) cargarDatosPaciente(sel.value);
+});
 </script>
 
 @endsection

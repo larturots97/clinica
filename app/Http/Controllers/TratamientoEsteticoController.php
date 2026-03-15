@@ -1,149 +1,317 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Medico;
 
+use App\Http\Controllers\Controller;
 use App\Models\TratamientoEstetico;
 use App\Models\TratamientoZona;
+use App\Models\TipoTratamiento;
 use App\Models\Paciente;
-use App\Models\Medico;
+use App\Models\Cita;
 use App\Models\Producto;
-use App\Models\Clinica;
 use App\Models\MovimientoInventario;
+use App\Models\ConfiguracionMedico;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 
 class TratamientoEsteticoController extends Controller
 {
-    private function esMedicoEstetico()
+    private function getMedico()
     {
-        $user = auth()->user();
-        if ($user->hasRole('admin')) return false;
-        if (!$user->hasRole('medico')) return false;
-        $medico = \App\Models\Medico::where('user_id', $user->id)->first();
-        return $medico && $medico->especialidad?->nombre === 'Medicina Estética';
+        return auth()->user()->medico;
     }
 
     public function index()
     {
-        $tratamientos = TratamientoEstetico::with(['paciente', 'medico'])
-            ->orderBy('fecha', 'desc')
-            ->paginate(15);
-        return view('estetica.index', compact('tratamientos'));
+        $medico = $this->getMedico();
+        $tratamientos = TratamientoEstetico::with(['paciente', 'tipoTratamiento'])
+            ->where('medico_id', $medico->id)
+            ->orderByDesc('fecha')
+            ->paginate(20);
+
+        return view('medico.tratamientos-esteticos.index', compact('tratamientos'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        if (!$this->esMedicoEstetico()) {
-            abort(403, 'Solo médicos de Medicina Estética pueden crear tratamientos.');
+        $medico    = $this->getMedico();
+        $tipos     = TipoTratamiento::where('medico_id', $medico->id)->activos()->get()->groupBy('grupo');
+        $pacientes = Paciente::where('clinica_id', $medico->clinica_id)->orderBy('nombre')->get();
+        $productos = Producto::where('clinica_id', $medico->clinica_id)
+            ->where('activo', true)
+            ->where('stock_actual', '>', 0)
+            ->orderBy('nombre')
+            ->get();
+
+        $paciente = null;
+        $cita     = null;
+
+        if ($request->paciente_id) {
+            $paciente = Paciente::find($request->paciente_id);
         }
-        $pacientes = Paciente::orderBy('nombre')->get();
-        $medicos   = Medico::where('activo', true)->orderBy('nombre')->get();
-        $productos = Producto::where('activo', true)->orderBy('nombre')->get();
-        return view('estetica.create', compact('pacientes', 'medicos', 'productos'));
+        if ($request->cita_id) {
+            $cita = Cita::with('paciente')->find($request->cita_id);
+            if ($cita) $paciente = $cita->paciente;
+        }
+
+        return view('medico.tratamientos-esteticos.create',
+            compact('tipos', 'pacientes', 'paciente', 'cita', 'medico', 'productos'));
     }
 
     public function store(Request $request)
     {
-        if (!$this->esMedicoEstetico()) {
-            abort(403, 'Solo médicos de Medicina Estética pueden crear tratamientos.');
-        }
-
         $request->validate([
-            'paciente_id' => 'required|exists:pacientes,id',
-            'medico_id'   => 'required|exists:medicos,id',
-            'fecha'       => 'required|date',
-            'zonas'       => 'required|array|min:1',
+            'paciente_id'         => 'required|exists:pacientes,id',
+            'tipo_tratamiento_id' => 'required|exists:tipo_tratamientos,id',
+            'fecha'               => 'required|date',
+            'tipo_clave'          => 'required|string',
+            'grupo'               => 'required|in:A,B,C,D,E',
+            'producto_id'         => 'nullable|exists:productos,id',
+            'producto_cantidad'   => 'nullable|numeric|min:0.01',
         ]);
 
-        $clinica = Clinica::first();
+        $medico = $this->getMedico();
+        $tipo   = TipoTratamiento::findOrFail($request->tipo_tratamiento_id);
 
-        DB::transaction(function() use ($request, $clinica) {
+        // Verificar stock antes de iniciar la transacción
+        if ($request->producto_id && $request->producto_cantidad) {
+            $producto = Producto::findOrFail($request->producto_id);
+            if ($producto->stock_actual < $request->producto_cantidad) {
+                return back()->withInput()->withErrors([
+                    'producto_cantidad' => "Stock insuficiente. Disponible: {$producto->stock_actual} {$producto->unidad}.",
+                ]);
+            }
+        }
+
+        $tratamiento = null;
+
+        DB::transaction(function () use ($request, $medico, $tipo, &$tratamiento) {
+
             $tratamiento = TratamientoEstetico::create([
-                'clinica_id'              => $clinica->id,
+                'clinica_id'              => $medico->clinica_id,
+                'medico_id'               => $medico->id,
                 'paciente_id'             => $request->paciente_id,
-                'medico_id'               => $request->medico_id,
+                'tipo_tratamiento_id'     => $request->tipo_tratamiento_id,
                 'fecha'                   => $request->fecha,
-                'titulo'                  => $request->titulo,
+                'titulo'                  => $tipo->nombre,
+                'grupo'                   => $request->grupo,
+                'tipo_clave'              => $request->tipo_clave,
+                'motivo_consulta'         => $request->motivo_consulta,
+                'fitzpatrick'             => $request->fitzpatrick,
+                'tipo_piel'               => $request->tipo_piel ?? [],
+                'condiciones_piel'        => $request->condiciones_piel ?? [],
+                'antecedentes'            => $request->antecedentes ?? [],
+                'simetria'                => $request->simetria,
+                'tonicidad'               => $request->tonicidad,
+                'tecnica'                 => $request->tecnica,
+                'profundidad'             => $request->profundidad,
+                'producto_id'             => $request->producto_id ?: null,
+                'producto_cantidad'       => $request->producto_cantidad ?: null,
+                'producto_marca'          => $request->producto_marca,
+                'producto_lote'           => $request->producto_lote,
+                'producto_caducidad'      => $request->producto_caducidad ?: null,
+                'sesion_numero'           => $request->sesion_numero ?? 1,
+                'intervalo'               => $request->intervalo,
+                'volumen_total'           => $request->volumen_total,
+                'unidad_volumen'          => $request->unidad_volumen,
+                'objetivo'                => $request->objetivo,
+                'exploracion_fisica'      => $request->exploracion_fisica,
+                'peso'                    => $request->peso,
+                'talla'                   => $request->talla,
+                'temperatura'             => $request->temperatura,
+                'tension_arterial'        => $request->tension_arterial,
+                'frecuencia_cardiaca'     => $request->frecuencia_cardiaca,
+                'saturacion_o2'           => $request->saturacion_o2,
                 'observaciones_generales' => $request->observaciones_generales,
+                'observaciones_post'      => $request->observaciones_post,
+                'consentimiento_idioma'   => $request->consentimiento_idioma ?? 'es',
+                'consentimiento_entrega'  => $request->consentimiento_entrega,
+                'campos_extra'            => $request->campos_extra
+                    ? (is_array($request->campos_extra) ? $request->campos_extra : json_decode($request->campos_extra, true))
+                    : null,
+                'mapa_activo'             => $request->input('mapa_activo', '1') === '1' ? 1 : 0,
+                'zonas_texto'             => $request->zonas_texto,
             ]);
 
-            foreach ($request->zonas as $zonaData) {
-                if (empty($zonaData['zona'])) continue;
+            // ── Descontar inventario ──────────────────────────────────────
+            if ($request->producto_id && $request->producto_cantidad) {
+                $producto      = Producto::lockForUpdate()->find($request->producto_id);
+                $stockAnterior = $producto->stock_actual;
+                $stockNuevo    = $stockAnterior - (float) $request->producto_cantidad;
 
-                TratamientoZona::create([
-                    'tratamiento_id' => $tratamiento->id,
-                    'producto_id'    => $zonaData['producto_id'] ?? null,
-                    'zona'           => $zonaData['zona'],
-                    'zona_label'     => $zonaData['zona_label'] ?? $zonaData['zona'],
-                    'cantidad'       => $zonaData['cantidad'] ?? 0,
-                    'unidad'         => $zonaData['unidad'] ?? null,
-                    'notas'          => $zonaData['notas'] ?? null,
+                $producto->update(['stock_actual' => $stockNuevo]);
+
+                MovimientoInventario::create([
+                    'clinica_id'     => $medico->clinica_id,
+                    'producto_id'    => $producto->id,
+                    'user_id'        => auth()->id(),
+                    'tipo'           => 'salida',
+                    'cantidad'       => $request->producto_cantidad,
+                    'stock_anterior' => $stockAnterior,
+                    'stock_nuevo'    => $stockNuevo,
+                    'motivo'         => "Tratamiento estético #{$tratamiento->id} — {$tratamiento->titulo}",
                 ]);
+            }
 
-                if (!empty($zonaData['producto_id']) && !empty($zonaData['cantidad'])) {
-                    $producto = Producto::find($zonaData['producto_id']);
-                    if ($producto) {
-                        $stockAnterior = $producto->stock_actual;
-                        $stockNuevo    = max(0, $stockAnterior - $zonaData['cantidad']);
-                        $producto->update(['stock_actual' => $stockNuevo]);
-
-                        MovimientoInventario::create([
-                            'clinica_id'     => $clinica->id,
-                            'producto_id'    => $producto->id,
-                            'user_id'        => Auth::id(),
-                            'tipo'           => 'salida',
-                            'cantidad'       => $zonaData['cantidad'],
-                            'stock_anterior' => $stockAnterior,
-                            'stock_nuevo'    => $stockNuevo,
-                            'motivo'         => 'Tratamiento estético — ' . ($zonaData['zona_label'] ?? $zonaData['zona']),
+            // ── Zonas predefinidas ────────────────────────────────────────
+            if ($request->zonas_predefinidas) {
+                foreach ($request->zonas_predefinidas as $zona => $datos) {
+                    if (!empty($datos['activa'])) {
+                        TratamientoZona::create([
+                            'tratamiento_id' => $tratamiento->id,
+                            'zona'           => $zona,
+                            'zona_label'     => $datos['label'] ?? $zona,
+                            'tipo'           => 'predefinida',
+                            'cantidad'       => $datos['cantidad'] ?? null,
+                            'unidad'         => $datos['unidad'] ?? null,
+                            'notas'          => $datos['notas'] ?? null,
+                            'activa'         => true,
                         ]);
                     }
                 }
             }
+
+            // ── Puntos libres del mapa ────────────────────────────────────
+            if ($request->puntos_libres) {
+                $raw    = $request->puntos_libres;
+                $puntos = is_array($raw) ? $raw : json_decode($raw, true);
+                foreach ($puntos as $punto) {
+                    TratamientoZona::create([
+                        'tratamiento_id' => $tratamiento->id,
+                        'zona'           => 'libre',
+                        'zona_label'     => $punto['nombre'] ?? $punto['label'] ?? '',
+                        'tipo'           => 'libre',
+                        'coord_x'        => $punto['x'],
+                        'coord_y'        => $punto['y'],
+                        'color'          => $punto['color'] ?? '#dc2626',
+                        'cantidad'       => $punto['cantidad'] ?? null,
+                        'unidad'         => isset($punto['cantidad']) ? 'U' : null,
+                        'notas'          => $punto['label'] ?? null,
+                        'activa'         => true,
+                    ]);
+                }
+            }
         });
 
-        return redirect()->route('estetica.index')
-            ->with('success', 'Tratamiento estético registrado exitosamente.');
+        return redirect()->route('medico.tratamientos-esteticos.show', $tratamiento)
+            ->with('success', 'Historia clínica estética guardada correctamente.');
     }
 
-    public function show(TratamientoEstetico $estetica)
+    public function show(TratamientoEstetico $tratamientosEstetico)
     {
-        $estetica->load(['paciente', 'medico', 'zonas.producto']);
-        return view('estetica.show', compact('estetica'));
+        $tratamiento = $tratamientosEstetico;
+        $tratamiento->load(['paciente', 'tipoTratamiento', 'zonas', 'medico', 'producto']);
+        return view('medico.tratamientos-esteticos.show', compact('tratamiento'));
     }
 
-    public function edit(TratamientoEstetico $estetica)
+    public function edit(TratamientoEstetico $tratamientosEstetico)
     {
-        if (!$this->esMedicoEstetico()) {
-            abort(403, 'Solo médicos de Medicina Estética pueden editar tratamientos.');
+        $tratamiento = $tratamientosEstetico;
+        $medico      = $this->getMedico();
+        $tipos       = TipoTratamiento::where('medico_id', $medico->id)->activos()->get()->groupBy('grupo');
+        $tratamiento->load(['zonas', 'tipoTratamiento']);
+        return view('medico.tratamientos-esteticos.edit', compact('tratamiento', 'tipos', 'medico'));
+    }
+
+    public function pdf(TratamientoEstetico $tratamientosEstetico)
+    {
+        $tratamiento = $tratamientosEstetico;
+        $tratamiento->load(['paciente', 'tipoTratamiento', 'zonas', 'medico', 'producto']);
+
+        $mapaBase64 = $this->generarMapaBase64($tratamiento);
+
+        $pdf = Pdf::loadView('medico.tratamientos-esteticos.pdf', compact('tratamiento', 'mapaBase64'))
+            ->setPaper('letter', 'portrait');
+
+        return $pdf->stream('historial-estetico-' . $tratamiento->id . '.pdf');
+    }
+
+    public function consentimiento(TratamientoEstetico $tratamientosEstetico)
+    {
+        $tratamiento = $tratamientosEstetico;
+        $tratamiento->load(['paciente', 'tipoTratamiento', 'medico.clinica', 'producto', 'zonas']);
+
+        $config = ConfiguracionMedico::where('medico_id', $tratamiento->medico_id)->first();
+
+        $pdf = Pdf::loadView('medico.tratamientos-esteticos.consentimiento-pdf', compact('tratamiento', 'config'))
+            ->setPaper('letter', 'portrait');
+
+        return $pdf->stream('consentimiento-' . $tratamiento->id . '.pdf');
+    }
+
+    private function generarMapaBase64($tratamiento): string
+    {
+        $coordsZonas = [
+            'F'   => [100, 74],  'GL'  => [100, 100],
+            'PGI' => [52,  122], 'PGD' => [148, 122],
+            'BL'  => [100, 140], 'L'   => [100, 172],
+            'MI'  => [44,  158], 'MD'  => [156, 158],
+            'C'   => [100, 228],
+        ];
+
+        $predefinidas     = $tratamiento->zonas->where('tipo', 'predefinida')->where('activa', true)->filter(fn($z) => $z->cantidad > 0);
+        $libres           = $tratamiento->zonas->where('tipo', 'libre');
+        $zonasActivasKeys = $predefinidas->pluck('zona')->toArray();
+        $zonasMap         = $predefinidas->keyBy('zona');
+
+        $puntosActivos = '';
+        foreach ($coordsZonas as $key => $coords) {
+            if (in_array($key, $zonasActivasKeys)) {
+                $zona = $zonasMap->get($key);
+                $cant = $zona?->cantidad;
+                $cx   = $coords[0];
+                $cy   = $coords[1];
+                $puntosActivos .= "<circle cx=\"{$cx}\" cy=\"{$cy}\" r=\"11\" fill=\"#9333ea\"/>";
+                $puntosActivos .= "<text x=\"{$cx}\" y=\"" . ($cy + 4) . "\" text-anchor=\"middle\" font-size=\"8\" fill=\"white\" font-family=\"Arial\" font-weight=\"bold\">{$key}</text>";
+                if ($cant) {
+                    $puntosActivos .= "<text x=\"{$cx}\" y=\"" . ($cy - 14) . "\" text-anchor=\"middle\" font-size=\"8\" fill=\"#4c1d95\" font-family=\"Arial\" font-weight=\"bold\">{$cant}U</text>";
+                }
+            }
         }
-        $pacientes = Paciente::orderBy('nombre')->get();
-        $medicos   = Medico::where('activo', true)->orderBy('nombre')->get();
-        $productos = Producto::where('activo', true)->orderBy('nombre')->get();
-        $estetica->load('zonas');
-        return view('estetica.edit', compact('estetica', 'pacientes', 'medicos', 'productos'));
-    }
 
-    public function update(Request $request, TratamientoEstetico $estetica)
-    {
-        if (!$this->esMedicoEstetico()) {
-            abort(403, 'Solo médicos de Medicina Estética pueden editar tratamientos.');
+        $puntosLibres = '';
+        foreach ($libres as $pl) {
+            if ($pl->coord_x && $pl->coord_y) {
+                $color = $pl->color ?? '#dc2626';
+                $cx    = $pl->coord_x;
+                $cy    = $pl->coord_y;
+                $puntosLibres .= "<circle cx=\"{$cx}\" cy=\"{$cy}\" r=\"9\" fill=\"{$color}\"/>";
+                if ($pl->zona_label) {
+                    $lbl = htmlspecialchars(substr($pl->zona_label, 0, 6));
+                    $puntosLibres .= "<text x=\"" . ($cx + 11) . "\" y=\"" . ($cy + 3) . "\" font-size=\"7\" fill=\"{$color}\" font-family=\"Arial\" font-weight=\"bold\">{$lbl}</text>";
+                }
+                if ($pl->cantidad) {
+                    $puntosLibres .= "<text x=\"{$cx}\" y=\"" . ($cy - 13) . "\" text-anchor=\"middle\" font-size=\"8\" fill=\"{$color}\" font-family=\"Arial\" font-weight=\"bold\">{$pl->cantidad}U</text>";
+                }
+            }
         }
 
-        $estetica->update([
-            'titulo'                  => $request->titulo,
-            'observaciones_generales' => $request->observaciones_generales,
-        ]);
+        $svg = <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="270" viewBox="0 0 200 270">
+  <ellipse cx="100" cy="130" rx="64" ry="84" fill="#fdf8ee" stroke="#3d2010" stroke-width="1.5"/>
+  <path d="M82 206 L80 238 Q100 246 120 238 L118 206" fill="#fdf8ee" stroke="#3d2010" stroke-width="1.2"/>
+  <path d="M36 93 Q38 63 60 46 Q80 32 100 30 Q120 32 140 46 Q162 63 164 93 Q152 66 100 64 Q48 66 36 93 Z" fill="#2c1408"/>
+  <ellipse cx="36" cy="130" rx="9" ry="15" fill="#fdf0d8" stroke="#3d2010" stroke-width="1.2"/>
+  <ellipse cx="164" cy="130" rx="9" ry="15" fill="#fdf0d8" stroke="#3d2010" stroke-width="1.2"/>
+  <path d="M62 100 Q75 94 90 98" stroke="#2c1408" stroke-width="2" stroke-linecap="round"/>
+  <path d="M110 98 Q125 94 138 100" stroke="#2c1408" stroke-width="2" stroke-linecap="round"/>
+  <path d="M62 110 Q76 104 90 110" stroke="#2c1408" stroke-width="2" stroke-linecap="round"/>
+  <path d="M110 110 Q124 104 138 110" stroke="#2c1408" stroke-width="2" stroke-linecap="round"/>
+  <ellipse cx="76" cy="116" rx="14" ry="9" fill="#fdf8ee" stroke="#2c1408" stroke-width="1.2"/>
+  <ellipse cx="124" cy="116" rx="14" ry="9" fill="#fdf8ee" stroke="#2c1408" stroke-width="1.2"/>
+  <circle cx="76" cy="116" r="6" fill="#1a0a04"/>
+  <circle cx="124" cy="116" r="6" fill="#1a0a04"/>
+  <circle cx="74" cy="114" r="2" fill="#fdf8ee"/>
+  <circle cx="122" cy="114" r="2" fill="#fdf8ee"/>
+  <path d="M97 128 Q94 146 88 152 Q100 156 112 152 Q106 146 103 128" fill="none" stroke="#c0906a" stroke-width="1.2"/>
+  <path d="M80 168 Q100 180 120 168" fill="#c08878" stroke="#3d2010" stroke-width="0.8"/>
+  <path d="M80 168 Q100 162 120 168" fill="#a06858" stroke="#3d2010" stroke-width="0.8"/>
+  {$puntosActivos}
+  {$puntosLibres}
+</svg>
+SVG;
 
-        return redirect()->route('estetica.show', $estetica)
-            ->with('success', 'Tratamiento actualizado exitosamente.');
-    }
-
-    public function destroy(TratamientoEstetico $estetica)
-    {
-        $estetica->delete();
-        return redirect()->route('estetica.index')
-            ->with('success', 'Tratamiento eliminado exitosamente.');
+        return 'data:image/svg+xml;base64,' . base64_encode($svg);
     }
 }

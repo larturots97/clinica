@@ -39,7 +39,7 @@ class CitaMedicoController extends Controller
 
             $eventos = $citas->map(fn($c) => [
                 'id'    => $c->id,
-                'title' => $c->paciente->nombre . ' ' . $c->paciente->apellidos,
+                'title' => $c->paciente?->nombre_completo ?? $c->nombre_visitante ?? 'Visitante',
                 'start' => $c->fecha_hora->format('Y-m-d\TH:i:s'),
                 'end'   => $c->fecha_hora->copy()->addMinutes($c->duracion_minutos ?? 30)->format('Y-m-d\TH:i:s'),
                 'color' => $this->colorEstado($c->estado),

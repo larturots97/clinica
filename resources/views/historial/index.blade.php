@@ -6,7 +6,7 @@
 
 <div class="flex items-center justify-between mb-6">
     <div>
-        <h2 class="text-lg font-semibold text-slate-800">Historial Clínico</h2>
+        <h2 class="text-lg font-semibold text-slate-800">Historial de consultas</h2>
         <p class="text-sm text-slate-500">Total: {{ $historiales->total() }} consultas</p>
     </div>
     <a href="{{ route('historial.create') }}"

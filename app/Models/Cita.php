@@ -10,20 +10,27 @@ class Cita extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = [
-        'clinica_id',
-        'paciente_id',
-        'medico_id',
-        'fecha_hora',
-        'duracion_minutos',
-        'motivo',
-        'estado',
-        'notas',
-        'tipo_tratamiento_id',
-        'telefono_paciente',
-        'email_paciente',
-        'recordatorio_enviado',
-    ];
+   protected $fillable = [
+    'clinica_id',
+    'paciente_id',
+    'medico_id',
+    'fecha_hora',
+    'duracion_minutos',
+    'motivo',
+    'estado',
+    'notas',
+    'tipo_tratamiento_id',
+    'telefono_paciente',
+    'email_paciente',
+    'recordatorio_enviado',
+    'origen',
+    'nombre_visitante',
+    'telefono_visitante',
+    'email_visitante',
+    'motivo_visitante',
+    'fecha_cita',
+    'hora_cita',
+];
 
     protected $casts = [
         'fecha_hora' => 'datetime',
