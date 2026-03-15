@@ -7,13 +7,16 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     public function up(): void
-    {
-        Schema::table('tratamientos_esteticos', function (Blueprint $table) {
-            $table->foreign('tipo_tratamiento_id')
-                  ->references('id')->on('tipo_tratamientos')
-                  ->nullOnDelete();
-        });
-    }
+{
+    Schema::table('tratamientos_esteticos', function (Blueprint $table) {
+        if (!Schema::hasColumn('tratamientos_esteticos', 'tipo_tratamiento_id')) {
+            $table->unsignedBigInteger('tipo_tratamiento_id')->nullable();
+        }
+        $table->foreign('tipo_tratamiento_id')
+              ->references('id')->on('tipo_tratamientos')
+              ->nullOnDelete();
+    });
+}
 
     public function down(): void
     {
