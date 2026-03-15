@@ -7,7 +7,7 @@ return new class extends Migration {
     public function up(): void {
         Schema::table('medicos', function (Blueprint $table) {
             if (!Schema::hasColumn('medicos', 'duracion_cita'))
-                $table->integer('duracion_cita')->default(30)->after('cedula');
+                $table->integer('duracion_cita')->default(30);
         });
         Schema::table('citas', function (Blueprint $table) {
             if (!Schema::hasColumn('citas', 'duracion_minutos'))
