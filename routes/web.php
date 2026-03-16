@@ -49,7 +49,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/recetas/create', [\App\Http\Controllers\Medico\RecetaController::class, 'create'])->name('recetas.create');
         Route::post('/recetas', [\App\Http\Controllers\Medico\RecetaController::class, 'store'])->name('recetas.store');
         Route::get('/recetas/{receta}', [\App\Http\Controllers\Medico\RecetaController::class, 'show'])->name('recetas.show');
-
+        Route::get('/recetas/{receta}/pdf', [\App\Http\Controllers\Medico\RecetaController::class, 'pdf'])->name('medico.recetas.pdf');
+        
         Route::get('/agenda', [\App\Http\Controllers\Medico\AgendaController::class, 'index'])->name('agenda.index');
         Route::put('/agenda/{cita}', [\App\Http\Controllers\Medico\AgendaController::class, 'update'])->name('agenda.update');
 

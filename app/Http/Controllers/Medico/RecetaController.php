@@ -91,4 +91,20 @@ class RecetaController extends Controller
 
         return view('medico.recetas.show', compact('receta'));
     }
+    public function pdf(Receta $receta)
+    {
+        $medico = Auth::user()->medico;
+
+        if ($receta->medico_id !== $medico->id) {
+            abort(403);
+        }
+
+        $receta->load('paciente', 'items', 'medico.especialidad');
+        $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('recetas.pdf', compact('receta', 'config'))
+            ->setPaper('letter', 'portrait');
+
+        return $pdf->stream('receta-' . $receta->folio . '.pdf');
+    }
 }
