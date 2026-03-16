@@ -28,8 +28,8 @@ class LandingConfigController extends Controller
         $data = $request->only(['hero_titulo', 'hero_descripcion', 'anos_experiencia', 'num_pacientes']);
 
         if ($request->hasFile('foto_doctora')) {
-            if ($landing->foto_doctora) Storage::disk('public')->delete($landing->foto_doctora);
-            $data['foto_doctora'] = $request->file('foto_doctora')->store('landing', 'public');
+            if ($landing->foto_doctora) Storage::disk(config('filesystems.default'))->delete($landing->foto_doctora);
+            $data['foto_doctora'] = $request->file('foto_doctora')->store('landing', config('filesystems.default'));
         }
 
         $landing->update($data);
@@ -50,8 +50,8 @@ class LandingConfigController extends Controller
         $data = $request->only(['sobre_mi']);
 
         if ($request->hasFile('foto_consultorio')) {
-            if ($landing->foto_consultorio) Storage::disk('public')->delete($landing->foto_consultorio);
-            $data['foto_consultorio'] = $request->file('foto_consultorio')->store('landing', 'public');
+            if ($landing->foto_consultorio) Storage::disk(config('filesystems.default'))->delete($landing->foto_consultorio);
+            $data['foto_consultorio'] = $request->file('foto_consultorio')->store('landing', config('filesystems.default'));
         }
 
         $landing->update($data);
@@ -149,7 +149,7 @@ class LandingConfigController extends Controller
         ]);
 
         $orden = LandingGaleria::where('medico_id', $medico->id)->max('orden') + 1;
-        $path  = $request->file('imagen')->store('landing/galeria', 'public');
+        $path  = $request->file('imagen')->store('landing/galeria', config('filesystems.default'));
 
         LandingGaleria::create([
             'medico_id' => $medico->id,
@@ -166,7 +166,7 @@ class LandingConfigController extends Controller
     {
         $medico = Auth::user()->medico;
         abort_unless($galeria->medico_id === $medico->id, 403);
-        Storage::disk('public')->delete($galeria->imagen);
+        Storage::disk(config('filesystems.default'))->delete($galeria->imagen);
         $galeria->delete();
         return redirect()->route('medico.configuraciones.index', ['tab' => 'landing'])
             ->with('success', 'Foto eliminada.');
