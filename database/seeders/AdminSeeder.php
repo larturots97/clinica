@@ -36,4 +36,16 @@ class AdminSeeder extends Seeder
 
         $this->command->info('Admin creado: admin@clinica.com / password123');
     }
+	// Crear especialidades
+$especialidades = [
+    'Medicina Estética',
+    'Medicina General',
+    'Dermatología',
+    'Nutrición',
+    'Psicología',
+];
+
+foreach ($especialidades as $esp) {
+    \App\Models\Especialidad::firstOrCreate(['nombre' => $esp]);
+}
 }
