@@ -64,13 +64,30 @@
 
     @php
         $config = \App\Models\ConfiguracionMedico::where('medico_id', $receta->medico_id)->first();
+
+        // Función helper para convertir imagen (R2 o local) a base64 para DomPDF
+        function imagenBase64(?string $path): ?string {
+            if (!$path) return null;
+            try {
+                $contenido = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'))->get($path);
+                if (!$contenido) return null;
+                $mime = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'))->mimeType($path);
+                return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        $logoBase64      = imagenBase64($config?->logo);
+        $logoFondoPath   = $config?->receta_logo_fondo ?: $config?->logo;
+        $logoFondoBase64 = imagenBase64($logoFondoPath);
     @endphp
 
     {{-- HEADER --}}
     <div class="header">
         <div class="logo-wrap">
-            @if($config && $config->logo)
-                <img src="{{ storage_path('app/public/' . $config->logo) }}" class="logo-img" alt="Logo">
+            @if($logoBase64)
+                <img src="{{ $logoBase64 }}" class="logo-img" alt="Logo">
             @else
                 <div class="logo-initials">
                     {{ strtoupper(substr($receta->medico->nombre, 0, 1)) }}{{ strtoupper(substr($receta->medico->apellido_paterno ?? $receta->medico->apellidos ?? '', 0, 1)) }}
@@ -89,9 +106,8 @@
     {{-- BODY --}}
     <div class="body">
         {{-- Marca de agua --}}
-        @php $logoFondo = ($config && $config->receta_logo_fondo) ? $config->receta_logo_fondo : (($config && $config->logo) ? $config->logo : null); @endphp
-        @if($logoFondo)
-        <img src="{{ storage_path('app/public/' . $logoFondo) }}" class="logo-watermark" alt="">
+        @if($logoFondoBase64)
+        <img src="{{ $logoFondoBase64 }}" class="logo-watermark" alt="">
         @endif
 
         <div class="body-content">
@@ -162,7 +178,7 @@
                 <div class="firma-linea"></div>
                 <div class="firma-nombre">{{ $receta->medico->nombre_completo }}</div>
                 <div class="firma-sub">{{ $receta->medico->especialidad->nombre ?? '' }}</div>
-                @if($receta->medico->cedula ?? $receta->medico->cedula_profesional)
+                @if($receta->medico->cedula ?? $receta->medico->cedula_profesional ?? null)
                 <div class="firma-sub">Céd. Prof. {{ $receta->medico->cedula ?? $receta->medico->cedula_profesional }}</div>
                 @endif
             </div>
@@ -178,20 +194,17 @@
             @php
                 $ced = $receta->medico->cedula ?? $receta->medico->cedula_profesional ?? null;
                 $footerParts = [];
-                if ($ced) $footerParts[] = ['icon' => 'ced',  'text' => 'Ced. Prof. ' . $ced];
-                if (!empty($config->receta_direccion)) $footerParts[] = ['icon' => 'loc',  'text' => $config->receta_direccion];
-                if (!empty($config->receta_instagram))  $footerParts[] = ['icon' => 'ig',   'text' => '@' . $config->receta_instagram];
-                if (!empty($config->receta_facebook))   $footerParts[] = ['icon' => 'fb',   'text' => '@' . $config->receta_facebook];
-                if (!empty($config->receta_whatsapp))   $footerParts[] = ['icon' => 'wa',   'text' => $config->receta_whatsapp];
+                if ($ced) $footerParts[] = ['icon' => 'ced', 'text' => 'Ced. Prof. ' . $ced];
+                if (!empty($config->receta_direccion))  $footerParts[] = ['icon' => 'loc', 'text' => $config->receta_direccion];
+                if (!empty($config->receta_instagram))  $footerParts[] = ['icon' => 'ig',  'text' => '@' . $config->receta_instagram];
+                if (!empty($config->receta_facebook))   $footerParts[] = ['icon' => 'fb',  'text' => '@' . $config->receta_facebook];
+                if (!empty($config->receta_whatsapp))   $footerParts[] = ['icon' => 'wa',  'text' => $config->receta_whatsapp];
             @endphp
             @foreach($footerParts as $idx => $part)
                 @if($idx > 0)<span class="footer-sep">|</span>@endif
-                @if($part['icon'] === 'ig')
-                    <span class="footer-prefix">IG:</span>
-                @elseif($part['icon'] === 'fb')
-                    <span class="footer-prefix">FB:</span>
-                @elseif($part['icon'] === 'wa')
-                    <span class="footer-prefix">WA:</span>
+                @if($part['icon'] === 'ig')<span class="footer-prefix">IG:</span>
+                @elseif($part['icon'] === 'fb')<span class="footer-prefix">FB:</span>
+                @elseif($part['icon'] === 'wa')<span class="footer-prefix">WA:</span>
                 @endif
                 <span class="footer-item">{{ $part['text'] }}</span>
             @endforeach
