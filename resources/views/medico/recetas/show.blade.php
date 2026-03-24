@@ -10,7 +10,7 @@
         <h3 class="font-serif" style="font-size:21px;">Receta</h3>
         <span style="background:#ede9fe;color:#7c3aed;font-size:12px;font-weight:700;padding:3px 10px;border-radius:6px;font-family:monospace;">{{ $receta->folio }}</span>
     </div>
-    <a href="{{ route('recetas.pdf', $receta) }}" target="_blank"
+    <a href="{{ route('medico.recetas.pdf', $receta) }}" target="_blank"
         style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;background:#7c3aed;color:white;text-decoration:none;">
         <i class="fa-solid fa-file-pdf"></i> Descargar PDF
     </a>

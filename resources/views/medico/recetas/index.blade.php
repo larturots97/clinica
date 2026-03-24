@@ -56,7 +56,7 @@
                         style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#ede9fe;color:#7c3aed;text-decoration:none;">
                         <i class="fa-solid fa-eye" style="font-size:10px;"></i> Ver
                     </a>
-                    <a href="{{ route('recetas.pdf', $receta) }}" target="_blank"
+                    <a href="{{ route('medico.recetas.pdf', $receta) }}" target="_blank"
                         style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#d1fae5;color:#059669;text-decoration:none;">
                         <i class="fa-solid fa-file-pdf" style="font-size:10px;"></i> PDF
                     </a>

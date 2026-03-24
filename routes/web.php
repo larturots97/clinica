@@ -32,9 +32,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('citas', \App\Http\Controllers\CitaController::class);
     Route::resource('historial', \App\Http\Controllers\HistorialController::class);
     Route::resource('recetas', \App\Http\Controllers\RecetaController::class);
-    Route::get('recetas/{receta}/pdf', [\App\Http\Controllers\RecetaController::class, 'pdf'])->name('recetas.pdf');
+    Route::get('recetas/{receta}/pdf', [\App\Http\Controllers\RecetaController::class, 'pdf'])->name('admin.recetas.pdf');
     Route::resource('facturas', \App\Http\Controllers\FacturaController::class);
-    Route::get('facturas/{factura}/pdf', [\App\Http\Controllers\FacturaController::class, 'pdf'])->name('facturas.pdf');
+    Route::get('facturas/{factura}/pdf', [\App\Http\Controllers\FacturaController::class, 'pdf'])->name('admin.facturas.pdf');
     Route::resource('inventario', \App\Http\Controllers\ProductoController::class);
     Route::post('inventario/{inventario}/movimiento', [\App\Http\Controllers\ProductoController::class, 'movimiento'])->name('inventario.movimiento');
     Route::resource('estetica', \App\Http\Controllers\Medico\TratamientoEsteticoController::class);
@@ -50,6 +50,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/recetas', [\App\Http\Controllers\Medico\RecetaController::class, 'store'])->name('recetas.store');
         Route::get('/recetas/{receta}', [\App\Http\Controllers\Medico\RecetaController::class, 'show'])->name('recetas.show');
         Route::get('/recetas/{receta}/pdf', [\App\Http\Controllers\Medico\RecetaController::class, 'pdf'])->name('recetas.pdf');
+
         Route::get('/agenda', [\App\Http\Controllers\Medico\AgendaController::class, 'index'])->name('agenda.index');
         Route::put('/agenda/{cita}', [\App\Http\Controllers\Medico\AgendaController::class, 'update'])->name('agenda.update');
 
@@ -125,8 +126,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/configuraciones/landing/sobre',                   [LandingConfigController::class, 'updateSobre'])     ->name('configuraciones.landing.sobre');
         Route::put('/configuraciones/landing/contacto',                [LandingConfigController::class, 'updateContacto'])  ->name('configuraciones.landing.contacto');
         Route::post('/configuraciones/landing/servicios',              [LandingConfigController::class, 'storeServicio'])   ->name('configuraciones.landing.servicio.store');
-        Route::post('/configuraciones/landing/servicios/iconos',         [LandingConfigController::class, 'updateIconos'])    ->name('configuraciones.landing.servicio.iconos');
-        Route::post('/configuraciones/landing/servicios/iconos',         [LandingConfigController::class, 'updateIconos'])    ->name('configuraciones.landing.servicio.iconos');
+        Route::post('/configuraciones/landing/servicios/iconos',       [LandingConfigController::class, 'updateIconos'])    ->name('configuraciones.landing.servicio.iconos');
         Route::delete('/configuraciones/landing/servicios/{servicio}', [LandingConfigController::class, 'destroyServicio']) ->name('configuraciones.landing.servicio.destroy');
         Route::post('/configuraciones/landing/galeria',                [LandingConfigController::class, 'storeGaleria'])    ->name('configuraciones.landing.galeria.store');
         Route::delete('/configuraciones/landing/galeria/{galeria}',    [LandingConfigController::class, 'destroyGaleria'])  ->name('configuraciones.landing.galeria.destroy');

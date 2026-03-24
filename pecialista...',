@@ -1,0 +1,23 @@
+[90m= [39m[34;4mApp\Models\Medico[39;24m {#6727
+    [34mid[39m: [35m1[39m,
+    [34mclinica_id[39m: [35m1[39m,
+    [34muser_id[39m: [35m3[39m,
+    [34mespecialidad_id[39m: [35m2[39m,
+    [34mcedula_profesional[39m: "[32m29556555[39m",
+    [34mnombre[39m: "[32mFernanda[39m",
+    [34mapellido_paterno[39m: "[32mMagaña[39m",
+    [34mapellido_materno[39m: "[32mTirado[39m",
+    [34mapellidos[39m: "[32mMagaña Tirado[39m",
+    [34mtelefono[39m: "[32m6692172793[39m",
+    [34mfoto[39m: [36mnull[39m,
+    [34mbiografia[39m: "[32mTrabaje inicialmente en algunas farmacias con consultorios donde desempeñaba como medico general[39m",
+    [34mactivo[39m: [35m1[39m,
+    [34mlogo[39m: "[32mmedicos/logos/px3SfMqlndDRV0DTmVhVTj2ilITFVQKwceD37FSH.png[39m",
+    [34mfirma[39m: "[32mmedicos/firmas/T0G7WVZUtm8FGdeTQBiF68OmnHQdRGphNcTSSsAo.png[39m",
+    [34mcedula[39m: "[32m828282[39m",
+    [34mduracion_cita[39m: [35m20[39m,
+    [34mcreated_at[39m: "[32m2026-03-06 05:43:48[39m",
+    [34mupdated_at[39m: "[32m2026-03-13 21:59:24[39m",
+    [34mdeleted_at[39m: [36mnull[39m,
+  }
+
