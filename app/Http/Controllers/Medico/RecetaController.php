@@ -93,11 +93,13 @@ class RecetaController extends Controller
         return view('medico.recetas.show', compact('receta'));
     }
 
-  public function pdf(Receta $receta)
+ public function pdf(Receta $receta)
 {
     $medico = Auth::user()->medico;
 
-    if ($receta->medico_id !== $medico->id) abort(403);
+    if ($receta->medico_id !== $medico->id) {
+        abort(403);
+    }
 
     $receta->load('paciente', 'items', 'medico.especialidad');
     $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
@@ -105,29 +107,36 @@ class RecetaController extends Controller
     $logoBase64      = $this->imagenBase64($config?->logo);
     $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
 
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('medico.recetas.pdf', compact(
-        'receta', 'config', 'logoBase64', 'logoFondoBase64'
-    ))->setPaper('letter', 'portrait');
+    \Illuminate\Support\Facades\Log::info('PDF logos', [
+        'logo_path'       => $config?->logo,
+        'logo_len'        => strlen($logoBase64 ?? ''),
+        'fondo_len'       => strlen($logoFondoBase64 ?? ''),
+        'disk'            => config('filesystems.default'),
+        'bucket'          => config('filesystems.disks.s3.bucket'),
+    ]);
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        'recetas.pdf',
+        compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
+    )
+    ->setOptions([
+        'isRemoteEnabled' => true,
+        'defaultFont'     => 'Arial',
+    ])
+    ->setPaper('letter', 'portrait');
 
     return $pdf->stream('receta-' . $receta->folio . '.pdf');
 }
 private function imagenBase64(?string $path): ?string
 {
     if (!$path) return null;
-
     try {
-        if (!Storage::disk('s3')->exists($path)) {
-            \Log::warning('Logo no encontrado en R2: ' . $path);
-            return null;
-        }
-
         $contenido = Storage::disk('s3')->get($path);
-        $mime      = Storage::disk('s3')->mimeType($path) ?? 'image/png';
-
+        if (!$contenido) return null;
+        $mime = Storage::disk('s3')->mimeType($path);
         return 'data:' . $mime . ';base64,' . base64_encode($contenido);
-
     } catch (\Exception $e) {
-        \Log::error('Error logo R2: ' . $path . ' — ' . $e->getMessage());
+        \Illuminate\Support\Facades\Log::error('imagenBase64 error: ' . $e->getMessage() . ' path: ' . $path);
         return null;
     }
 }
