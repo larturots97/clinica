@@ -94,33 +94,27 @@ class RecetaController extends Controller
     }
 
     public function pdf(Receta $receta)
-    {
-        $medico = Auth::user()->medico;
+{
+    $medico = Auth::user()->medico;
 
-        if ($receta->medico_id !== $medico->id) {
-            abort(403);
-        }
-
-        $receta->load('paciente', 'items', 'medico.especialidad');
-        $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
-
-        $logoBase64      = $this->imagenBase64($config?->logo);
-        $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
-
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
-            'recetas.pdf',
-            compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
-        )
-        ->setOptions([
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled'      => true,
-            'defaultFont'          => 'Arial',
-            'dpi'                  => 150,
-        ])
-        ->setPaper('letter', 'portrait');
-
-        return $pdf->stream('receta-' . $receta->folio . '.pdf');
+    if ($receta->medico_id !== $medico->id) {
+        abort(403);
     }
+
+    $receta->load('paciente', 'items', 'medico.especialidad');
+    $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
+
+    $logoBase64 = $this->imagenBase64($config?->logo);
+
+    // DEBUG TEMPORAL
+    dd([
+        'logo_path'       => $config?->logo,
+        'base64_len'      => strlen($logoBase64 ?? ''),
+        'base64_preview'  => substr($logoBase64 ?? '', 0, 50),
+        'bucket'          => config('filesystems.disks.s3.bucket'),
+        'endpoint'        => config('filesystems.disks.s3.endpoint'),
+    ]);
+}
 
     private function imagenBase64(?string $path): ?string
     {
