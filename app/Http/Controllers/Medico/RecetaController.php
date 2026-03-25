@@ -117,16 +117,18 @@ class RecetaController extends Controller
 }
 
     private function imagenBase64(?string $path): ?string
-    {
-        if (!$path) return null;
-        try {
-            $disk = Storage::disk(config('filesystems.default'));
-            if (!$disk->exists($path)) return null;
-            $contenido = $disk->get($path);
-            $mime      = $disk->mimeType($path);
-            return 'data:' . $mime . ';base64,' . base64_encode($contenido);
-        } catch (\Exception $e) {
-            return null;
-        }
+{
+    if (!$path) return null;
+    try {
+        // Leer directo via URL pública de R2
+        $url = Storage::disk('s3')->url($path);
+        $contenido = file_get_contents($url);
+        if (!$contenido) return null;
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime  = $finfo->buffer($contenido);
+        return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+    } catch (\Exception $e) {
+        return null;
     }
+}
 }
