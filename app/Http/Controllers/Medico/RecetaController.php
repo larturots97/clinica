@@ -126,8 +126,7 @@ class RecetaController extends Controller
     ->setPaper('letter', 'portrait');
 
     return $pdf->stream('receta-' . $receta->folio . '.pdf');
-}
-    $logoBase64 = $this->imagenBase64($config?->logo);
+      $logoBase64 = $this->imagenBase64($config?->logo);
 
 dd([
     'logo_len'  => strlen($logoBase64 ?? ''),
@@ -136,4 +135,6 @@ dd([
     'key_set'   => !empty(config('filesystems.disks.s3.key')),
     'logo_path' => $config?->logo,
 ]);
+}
+  
 }
