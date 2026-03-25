@@ -126,10 +126,30 @@ class RecetaController extends Controller
     }
 
     private function imagenUrl(?string $path): ?string
-    {
-        if (!$path) return null;
-        $endpoint = rtrim(config('filesystems.disks.s3.endpoint'), '/');
-        $bucket   = config('filesystems.disks.s3.bucket');
-        return $endpoint . '/' . $bucket . '/' . $path;
+{
+    if (!$path) return null;
+    try {
+        $client = new \Aws\S3\S3Client([
+            'version'                 => 'latest',
+            'region'                  => 'auto',
+            'endpoint'                => config('filesystems.disks.s3.endpoint'),
+            'credentials'             => [
+                'key'    => config('filesystems.disks.s3.key'),
+                'secret' => config('filesystems.disks.s3.secret'),
+            ],
+            'use_path_style_endpoint' => false,
+        ]);
+
+        $result    = $client->getObject([
+            'Bucket' => config('filesystems.disks.s3.bucket'),
+            'Key'    => $path,
+        ]);
+
+        $contenido = (string) $result['Body'];
+        $mime      = $result['ContentType'] ?? 'image/png';
+        return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+    } catch (\Exception $e) {
+        dd('S3 ERROR: ' . $e->getMessage() . ' | key: ' . config('filesystems.disks.s3.key') . ' | endpoint: ' . config('filesystems.disks.s3.endpoint'));
     }
+}
 }
