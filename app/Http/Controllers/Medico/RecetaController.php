@@ -127,17 +127,13 @@ class RecetaController extends Controller
 
     return $pdf->stream('receta-' . $receta->folio . '.pdf');
 }
-    private function imagenBase64(?string $path): ?string
-    {
-        if (!$path) return null;
-        try {
-            $contenido = Storage::disk('s3')->get($path);
-            if (!$contenido) return null;
-            $mime = Storage::disk('s3')->mimeType($path);
-            return 'data:' . $mime . ';base64,' . base64_encode($contenido);
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('imagenBase64 error: ' . $e->getMessage() . ' path: ' . $path);
-            return null;
-        }
-    }
+    $logoBase64 = $this->imagenBase64($config?->logo);
+
+dd([
+    'logo_len'  => strlen($logoBase64 ?? ''),
+    'disk'      => config('filesystems.default'),
+    'bucket'    => config('filesystems.disks.s3.bucket'),
+    'key_set'   => !empty(config('filesystems.disks.s3.key')),
+    'logo_path' => $config?->logo,
+]);
 }
