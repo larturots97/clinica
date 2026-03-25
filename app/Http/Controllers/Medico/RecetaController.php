@@ -93,46 +93,43 @@ class RecetaController extends Controller
         return view('medico.recetas.show', compact('receta'));
     }
 
-   public function pdf(Receta $receta)
-{
-    $medico = Auth::user()->medico;
+    public function pdf(Receta $receta)
+    {
+        $medico = Auth::user()->medico;
 
-    if ($receta->medico_id !== $medico->id) {
-        abort(403);
+        if ($receta->medico_id !== $medico->id) {
+            abort(403);
+        }
+
+        $receta->load('paciente', 'items', 'medico.especialidad');
+        $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
+
+        $logoUrl      = $this->imagenUrl($config?->logo);
+        $logoFondoUrl = $this->imagenUrl($config?->receta_logo_fondo ?: $config?->logo);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'recetas.pdf',
+            [
+                'receta'          => $receta,
+                'config'          => $config,
+                'logoBase64'      => $logoUrl,
+                'logoFondoBase64' => $logoFondoUrl,
+            ]
+        )
+        ->setOptions([
+            'isRemoteEnabled' => true,
+            'defaultFont'     => 'Arial',
+        ])
+        ->setPaper('letter', 'portrait');
+
+        return $pdf->stream('receta-' . $receta->folio . '.pdf');
     }
 
-    $receta->load('paciente', 'items', 'medico.especialidad');
-    $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
-
-    $logoBase64      = $this->imagenBase64($config?->logo);
-    $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
-
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
-        'recetas.pdf',
-        compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
-    )
-    ->setOptions([
-        'isHtml5ParserEnabled' => true,
-        'isRemoteEnabled'      => true,
-        'defaultFont'          => 'Arial',
-        'dpi'                  => 150,
-    ])
-    ->setPaper('letter', 'portrait');
-
-    return $pdf->stream('receta-' . $receta->folio . '.pdf');
-}
-
-   private function imagenBase64(?string $path): ?string
-{
-    if (!$path) return null;
-    try {
-        $url       = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(5));
-        $contenido = @file_get_contents($url);
-        if (!$contenido) return null;
-        $mime      = (new \finfo(FILEINFO_MIME_TYPE))->buffer($contenido);
-        return 'data:' . $mime . ';base64,' . base64_encode($contenido);
-    } catch (\Exception $e) {
-        dd('ERROR temporaryUrl: ' . $e->getMessage());
+    private function imagenUrl(?string $path): ?string
+    {
+        if (!$path) return null;
+        $endpoint = rtrim(config('filesystems.disks.s3.endpoint'), '/');
+        $bucket   = config('filesystems.disks.s3.bucket');
+        return $endpoint . '/' . $bucket . '/' . $path;
     }
-}
 }
