@@ -40,11 +40,11 @@ class RecetaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'paciente_id'         => 'required|exists:pacientes,id',
-            'fecha'               => 'required|date',
-            'diagnostico'         => 'nullable|string',
-            'indicaciones'        => 'nullable|string',
-            'medicamentos'        => 'required|array|min:1',
+            'paciente_id'                 => 'required|exists:pacientes,id',
+            'fecha'                       => 'required|date',
+            'diagnostico'                 => 'nullable|string',
+            'indicaciones'                => 'nullable|string',
+            'medicamentos'                => 'required|array|min:1',
             'medicamentos.*.nombre'       => 'required|string',
             'medicamentos.*.dosis'        => 'required|string',
             'medicamentos.*.frecuencia'   => 'required|string',
@@ -94,41 +94,43 @@ class RecetaController extends Controller
     }
 
     public function pdf(Receta $receta)
-{
-    $medico = Auth::user()->medico;
+    {
+        $medico = Auth::user()->medico;
 
-    if ($receta->medico_id !== $medico->id) {
-        abort(403);
+        if ($receta->medico_id !== $medico->id) {
+            abort(403);
+        }
+
+        $receta->load('paciente', 'items', 'medico.especialidad');
+        $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
+
+        $logoBase64      = $this->imagenBase64($config?->logo);
+        $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'recetas.pdf',
+            compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
+        )->setPaper('letter', 'portrait');
+
+        return $pdf->stream('receta-' . $receta->folio . '.pdf');
     }
-
-    $receta->load('paciente', 'items', 'medico.especialidad');
-    $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
-
-    // DEBUG TEMPORAL — quitar después
-    $disk = Storage::disk(config('filesystems.default'));
-    dd([
-        'filesystem_default' => config('filesystems.default'),
-        'logo_path'          => $config?->logo,
-        'fondo_path'         => $config?->receta_logo_fondo,
-        'logo_exists'        => $config?->logo ? $disk->exists($config->logo) : 'no hay path',
-        'fondo_exists'       => $config?->receta_logo_fondo ? $disk->exists($config->receta_logo_fondo) : 'no hay path',
-        'logo_base64_len'    => strlen($this->imagenBase64($config?->logo) ?? ''),
-    ]);
-}
 
     private function imagenBase64(?string $path): ?string
-{
-    if (!$path) return null;
-    try {
-        // Leer directo via URL pública de R2
-        $url = Storage::disk('s3')->url($path);
-        $contenido = file_get_contents($url);
-        if (!$contenido) return null;
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mime  = $finfo->buffer($contenido);
-        return 'data:' . $mime . ';base64,' . base64_encode($contenido);
-    } catch (\Exception $e) {
-        return null;
+    {
+        if (!$path) return null;
+        try {
+            // Usar el cliente S3 directamente para obtener el objeto
+            $client = Storage::disk('s3')->getClient();
+            $bucket = config('filesystems.disks.s3.bucket');
+            $result = $client->getObject([
+                'Bucket' => $bucket,
+                'Key'    => $path,
+            ]);
+            $contenido = (string) $result['Body'];
+            $mime      = $result['ContentType'] ?? 'image/png';
+            return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
-}
 }
