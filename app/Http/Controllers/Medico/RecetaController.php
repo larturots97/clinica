@@ -104,17 +104,12 @@ class RecetaController extends Controller
         $receta->load('paciente', 'items', 'medico.especialidad');
         $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
 
-        $logoUrl      = $this->imagenUrl($config?->logo);
-        $logoFondoUrl = $this->imagenUrl($config?->receta_logo_fondo ?: $config?->logo);
+        $logoBase64      = $this->imagenBase64($config?->logo);
+        $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
             'recetas.pdf',
-            [
-                'receta'          => $receta,
-                'config'          => $config,
-                'logoBase64'      => $logoUrl,
-                'logoFondoBase64' => $logoFondoUrl,
-            ]
+            compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
         )
         ->setOptions([
             'isRemoteEnabled' => true,
@@ -125,31 +120,31 @@ class RecetaController extends Controller
         return $pdf->stream('receta-' . $receta->folio . '.pdf');
     }
 
-    private function imagenUrl(?string $path): ?string
-{
-    if (!$path) return null;
-    try {
-        $client = new \Aws\S3\S3Client([
-            'version'                 => 'latest',
-            'region'                  => 'auto',
-            'endpoint'                => config('filesystems.disks.s3.endpoint'),
-            'credentials'             => [
-                'key'    => config('filesystems.disks.s3.key'),
-                'secret' => config('filesystems.disks.s3.secret'),
-            ],
-            'use_path_style_endpoint' => false,
-        ]);
+    private function imagenBase64(?string $path): ?string
+    {
+        if (!$path) return null;
+        try {
+            $client = new \Aws\S3\S3Client([
+                'version'                 => 'latest',
+                'region'                  => 'auto',
+                'endpoint'                => config('filesystems.disks.s3.endpoint'),
+                'credentials'             => [
+                    'key'    => config('filesystems.disks.s3.key'),
+                    'secret' => config('filesystems.disks.s3.secret'),
+                ],
+                'use_path_style_endpoint' => false,
+            ]);
 
-        $result    = $client->getObject([
-            'Bucket' => config('filesystems.disks.s3.bucket'),
-            'Key'    => $path,
-        ]);
+            $result    = $client->getObject([
+                'Bucket' => config('filesystems.disks.s3.bucket'),
+                'Key'    => $path,
+            ]);
 
-        $contenido = (string) $result['Body'];
-        $mime      = $result['ContentType'] ?? 'image/png';
-        return 'data:' . $mime . ';base64,' . base64_encode($contenido);
-    } catch (\Exception $e) {
-        dd('S3 ERROR: ' . $e->getMessage() . ' | key: ' . config('filesystems.disks.s3.key') . ' | endpoint: ' . config('filesystems.disks.s3.endpoint'));
+            $contenido = (string) $result['Body'];
+            $mime      = $result['ContentType'] ?? 'image/png';
+            return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
-}
 }
