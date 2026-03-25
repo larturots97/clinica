@@ -65,14 +65,26 @@ class ConfiguracionController extends Controller
             'consentimiento_punto_11', 'consentimiento_punto_12',
         ]);
 
+        // ══ update() — logo y firma ══
         if ($request->hasFile('logo')) {
-            if ($config->logo) Storage::disk('public')->delete($config->logo);
-            $data['logo'] = $request->file('logo')->store('configuraciones', 'public');
+            if ($config->logo) Storage::disk('s3')->delete($config->logo); // ← s3
+            $data['logo'] = $request->file('logo')->store('configuraciones', 's3'); // ← s3
         }
 
         if ($request->hasFile('firma')) {
-            if ($config->firma) Storage::disk('public')->delete($config->firma);
-            $data['firma'] = $request->file('firma')->store('configuraciones', 'public');
+            if ($config->firma) Storage::disk('s3')->delete($config->firma); // ← s3
+            $data['firma'] = $request->file('firma')->store('configuraciones', 's3'); // ← s3
+        }
+
+        // ══ updateReceta() — logo y logo de fondo ══
+        if ($request->hasFile('logo')) {
+            if ($config->logo) Storage::disk('s3')->delete($config->logo); // ← s3
+            $data['logo'] = $request->file('logo')->store('configuraciones', 's3'); // ← s3
+        }
+
+        if ($request->hasFile('receta_logo_fondo')) {
+            if ($config->receta_logo_fondo) Storage::disk('s3')->delete($config->receta_logo_fondo); // ← s3
+            $data['receta_logo_fondo'] = $request->file('receta_logo_fondo')->store('configuraciones', 's3'); // ← s3
         }
 
         $config->update($data);

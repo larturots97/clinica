@@ -93,54 +93,42 @@ class RecetaController extends Controller
         return view('medico.recetas.show', compact('receta'));
     }
 
-    public function pdf(Receta $receta)
-    {
-        $medico = Auth::user()->medico;
+  public function pdf(Receta $receta)
+{
+    $medico = Auth::user()->medico;
 
-        if ($receta->medico_id !== $medico->id) {
-            abort(403);
-        }
+    if ($receta->medico_id !== $medico->id) abort(403);
 
-        $receta->load('paciente', 'items', 'medico.especialidad');
-        $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
+    $receta->load('paciente', 'items', 'medico.especialidad');
+    $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
 
-        $logoBase64      = $this->imagenBase64($config?->logo);
-        $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
+    $logoBase64      = $this->imagenBase64($config?->logo);
+    $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
 
-        dd([
-            'logo_path' => $config?->logo,
-            'logo_len'  => strlen($logoBase64 ?? ''),
-            'fondo_len' => strlen($logoFondoBase64 ?? ''),
-            'disk'      => config('filesystems.default'),
-            'bucket'    => config('filesystems.disks.s3.bucket'),
-            'key_set'   => !empty(config('filesystems.disks.s3.key')),
-        ]);
-    }
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('medico.recetas.pdf', compact(
+        'receta', 'config', 'logoBase64', 'logoFondoBase64'
+    ))->setPaper('letter', 'portrait');
+
+    return $pdf->stream('receta-' . $receta->folio . '.pdf');
+}
 private function imagenBase64(?string $path): ?string
 {
     if (!$path) return null;
+
     try {
-        $client = new \Aws\S3\S3Client([
-            'version'     => 'latest',
-            'region'      => 'auto',
-            'endpoint'    => config('filesystems.disks.s3.endpoint'),
-            'credentials' => [
-                'key'    => config('filesystems.disks.s3.key'),
-                'secret' => config('filesystems.disks.s3.secret'),
-            ],
-            'use_path_style_endpoint' => false,
-        ]);
+        if (!Storage::disk('s3')->exists($path)) {
+            \Log::warning('Logo no encontrado en R2: ' . $path);
+            return null;
+        }
 
-        $result    = $client->getObject([
-            'Bucket' => config('filesystems.disks.s3.bucket'),
-            'Key'    => $path,
-        ]);
+        $contenido = Storage::disk('s3')->get($path);
+        $mime      = Storage::disk('s3')->mimeType($path) ?? 'image/png';
 
-        $contenido = (string) $result['Body'];
-        $mime      = $result['ContentType'] ?? 'image/png';
         return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+
     } catch (\Exception $e) {
-        dd('AWS ERROR: ' . $e->getMessage());
+        \Log::error('Error logo R2: ' . $path . ' — ' . $e->getMessage());
+        return null;
     }
 }
 }
