@@ -104,38 +104,39 @@ class RecetaController extends Controller
     $receta->load('paciente', 'items', 'medico.especialidad');
     $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
 
-    $logoBase64 = $this->imagenBase64($config?->logo);
+    $logoBase64      = $this->imagenBase64($config?->logo);
+    $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
 
-    dd([
-        'logo_path'      => $config?->logo,
-        'base64_len'     => strlen($logoBase64 ?? ''),
-        'base64_preview' => substr($logoBase64 ?? '', 0, 80),
+    \Illuminate\Support\Facades\Log::info('PDF logos', [
+        'logo_path'       => $config?->logo,
+        'logo_len'        => strlen($logoBase64 ?? ''),
+        'fondo_len'       => strlen($logoFondoBase64 ?? ''),
+        'disk'            => config('filesystems.default'),
+        'bucket'          => config('filesystems.disks.s3.bucket'),
     ]);
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        'recetas.pdf',
+        compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
+    )
+    ->setOptions([
+        'isRemoteEnabled' => true,
+        'defaultFont'     => 'Arial',
+    ])
+    ->setPaper('letter', 'portrait');
+
+    return $pdf->stream('receta-' . $receta->folio . '.pdf');
 }
     private function imagenBase64(?string $path): ?string
     {
         if (!$path) return null;
         try {
-            $client = new \Aws\S3\S3Client([
-                'version'                 => 'latest',
-                'region'                  => 'auto',
-                'endpoint'                => config('filesystems.disks.s3.endpoint'),
-                'credentials'             => [
-                    'key'    => config('filesystems.disks.s3.key'),
-                    'secret' => config('filesystems.disks.s3.secret'),
-                ],
-                'use_path_style_endpoint' => false,
-            ]);
-
-            $result    = $client->getObject([
-                'Bucket' => config('filesystems.disks.s3.bucket'),
-                'Key'    => $path,
-            ]);
-
-            $contenido = (string) $result['Body'];
-            $mime      = $result['ContentType'] ?? 'image/png';
+            $contenido = Storage::disk('s3')->get($path);
+            if (!$contenido) return null;
+            $mime = Storage::disk('s3')->mimeType($path);
             return 'data:' . $mime . ';base64,' . base64_encode($contenido);
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('imagenBase64 error: ' . $e->getMessage() . ' path: ' . $path);
             return null;
         }
     }
