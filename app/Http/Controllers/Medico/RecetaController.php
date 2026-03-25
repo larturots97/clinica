@@ -94,26 +94,27 @@ class RecetaController extends Controller
     }
 
     public function pdf(Receta $receta)
-    {
-        $medico = Auth::user()->medico;
+{
+    $medico = Auth::user()->medico;
 
-        if ($receta->medico_id !== $medico->id) {
-            abort(403);
-        }
-
-        $receta->load('paciente', 'items', 'medico.especialidad');
-        $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
-
-        $logoBase64      = $this->imagenBase64($config?->logo);
-        $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
-
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
-            'recetas.pdf',
-            compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
-        )->setPaper('letter', 'portrait');
-
-        return $pdf->stream('receta-' . $receta->folio . '.pdf');
+    if ($receta->medico_id !== $medico->id) {
+        abort(403);
     }
+
+    $receta->load('paciente', 'items', 'medico.especialidad');
+    $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
+
+    // DEBUG TEMPORAL — quitar después
+    $disk = Storage::disk(config('filesystems.default'));
+    dd([
+        'filesystem_default' => config('filesystems.default'),
+        'logo_path'          => $config?->logo,
+        'fondo_path'         => $config?->receta_logo_fondo,
+        'logo_exists'        => $config?->logo ? $disk->exists($config->logo) : 'no hay path',
+        'fondo_exists'       => $config?->receta_logo_fondo ? $disk->exists($config->receta_logo_fondo) : 'no hay path',
+        'logo_base64_len'    => strlen($this->imagenBase64($config?->logo) ?? ''),
+    ]);
+}
 
     private function imagenBase64(?string $path): ?string
     {
