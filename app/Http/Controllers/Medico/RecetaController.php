@@ -120,23 +120,27 @@ private function imagenBase64(?string $path): ?string
 {
     if (!$path) return null;
     try {
-        // Forzar throw para ver errores reales
-        $disk = Storage::build([
-            'driver'                  => 's3',
-            'key'                     => config('filesystems.disks.s3.key'),
-            'secret'                  => config('filesystems.disks.s3.secret'),
-            'region'                  => config('filesystems.disks.s3.region'),
-            'bucket'                  => config('filesystems.disks.s3.bucket'),
-            'endpoint'                => config('filesystems.disks.s3.endpoint'),
-            'use_path_style_endpoint' => config('filesystems.disks.s3.use_path_style_endpoint', false),
-            'throw'                   => true,
+        $client = new \Aws\S3\S3Client([
+            'version'     => 'latest',
+            'region'      => 'auto',
+            'endpoint'    => config('filesystems.disks.s3.endpoint'),
+            'credentials' => [
+                'key'    => config('filesystems.disks.s3.key'),
+                'secret' => config('filesystems.disks.s3.secret'),
+            ],
+            'use_path_style_endpoint' => false,
         ]);
 
-        $contenido = $disk->get($path);
-        $mime      = $disk->mimeType($path);
+        $result    = $client->getObject([
+            'Bucket' => config('filesystems.disks.s3.bucket'),
+            'Key'    => $path,
+        ]);
+
+        $contenido = (string) $result['Body'];
+        $mime      = $result['ContentType'] ?? 'image/png';
         return 'data:' . $mime . ';base64,' . base64_encode($contenido);
     } catch (\Exception $e) {
-        dd('STORAGE ERROR: ' . $e->getMessage());
+        dd('AWS ERROR: ' . $e->getMessage());
     }
 }
 }
