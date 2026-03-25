@@ -120,12 +120,23 @@ private function imagenBase64(?string $path): ?string
 {
     if (!$path) return null;
     try {
-        $contenido = Storage::disk('s3')->get($path);
-        if (!$contenido) return null;
-        $mime = Storage::disk('s3')->mimeType($path);
+        // Forzar throw para ver errores reales
+        $disk = Storage::build([
+            'driver'                  => 's3',
+            'key'                     => config('filesystems.disks.s3.key'),
+            'secret'                  => config('filesystems.disks.s3.secret'),
+            'region'                  => config('filesystems.disks.s3.region'),
+            'bucket'                  => config('filesystems.disks.s3.bucket'),
+            'endpoint'                => config('filesystems.disks.s3.endpoint'),
+            'use_path_style_endpoint' => config('filesystems.disks.s3.use_path_style_endpoint', false),
+            'throw'                   => true,
+        ]);
+
+        $contenido = $disk->get($path);
+        $mime      = $disk->mimeType($path);
         return 'data:' . $mime . ';base64,' . base64_encode($contenido);
     } catch (\Exception $e) {
-        dd('ERROR: ' . $e->getMessage());
+        dd('STORAGE ERROR: ' . $e->getMessage());
     }
 }
 }
