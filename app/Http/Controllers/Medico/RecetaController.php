@@ -116,22 +116,31 @@ class RecetaController extends Controller
     ]);
 }
 
-    private function imagenBase64(?string $path): ?string
-    {
-        if (!$path) return null;
-        try {
-            // Usar el cliente S3 directamente para obtener el objeto
-            $client = Storage::disk('s3')->getClient();
-            $bucket = config('filesystems.disks.s3.bucket');
-            $result = $client->getObject([
-                'Bucket' => $bucket,
-                'Key'    => $path,
-            ]);
-            $contenido = (string) $result['Body'];
-            $mime      = $result['ContentType'] ?? 'image/png';
-            return 'data:' . $mime . ';base64,' . base64_encode($contenido);
-        } catch (\Exception $e) {
-            return null;
-        }
+   private function imagenBase64(?string $path): ?string
+{
+    if (!$path) return null;
+    try {
+        $client = new \Aws\S3\S3Client([
+            'version'                 => 'latest',
+            'region'                  => config('filesystems.disks.s3.region', 'auto'),
+            'endpoint'                => config('filesystems.disks.s3.endpoint'),
+            'credentials'             => [
+                'key'    => config('filesystems.disks.s3.key'),
+                'secret' => config('filesystems.disks.s3.secret'),
+            ],
+            'use_path_style_endpoint' => true,
+        ]);
+
+        $result    = $client->getObject([
+            'Bucket' => config('filesystems.disks.s3.bucket'),
+            'Key'    => $path,
+        ]);
+
+        $contenido = (string) $result['Body'];
+        $mime      = $result['ContentType'] ?? 'image/png';
+        return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+    } catch (\Exception $e) {
+        return null;
     }
+}
 }
