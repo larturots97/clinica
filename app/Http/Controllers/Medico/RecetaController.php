@@ -93,7 +93,7 @@ class RecetaController extends Controller
         return view('medico.recetas.show', compact('receta'));
     }
 
-    public function pdf(Receta $receta)
+   public function pdf(Receta $receta)
 {
     $medico = Auth::user()->medico;
 
@@ -104,43 +104,35 @@ class RecetaController extends Controller
     $receta->load('paciente', 'items', 'medico.especialidad');
     $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
 
-    $logoBase64 = $this->imagenBase64($config?->logo);
+    $logoBase64      = $this->imagenBase64($config?->logo);
+    $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
 
-    // DEBUG TEMPORAL
-    dd([
-        'logo_path'       => $config?->logo,
-        'base64_len'      => strlen($logoBase64 ?? ''),
-        'base64_preview'  => substr($logoBase64 ?? '', 0, 50),
-        'bucket'          => config('filesystems.disks.s3.bucket'),
-        'endpoint'        => config('filesystems.disks.s3.endpoint'),
-    ]);
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        'recetas.pdf',
+        compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
+    )
+    ->setOptions([
+        'isHtml5ParserEnabled' => true,
+        'isRemoteEnabled'      => true,
+        'defaultFont'          => 'Arial',
+        'dpi'                  => 150,
+    ])
+    ->setPaper('letter', 'portrait');
+
+    return $pdf->stream('receta-' . $receta->folio . '.pdf');
 }
 
    private function imagenBase64(?string $path): ?string
 {
     if (!$path) return null;
     try {
-        $client = new \Aws\S3\S3Client([
-            'version'                 => 'latest',
-            'region'                  => config('filesystems.disks.s3.region', 'auto'),
-            'endpoint'                => config('filesystems.disks.s3.endpoint'),
-            'credentials'             => [
-                'key'    => config('filesystems.disks.s3.key'),
-                'secret' => config('filesystems.disks.s3.secret'),
-            ],
-            'use_path_style_endpoint' => true,
-        ]);
-
-        $result    = $client->getObject([
-            'Bucket' => config('filesystems.disks.s3.bucket'),
-            'Key'    => $path,
-        ]);
-
-        $contenido = (string) $result['Body'];
-        $mime      = $result['ContentType'] ?? 'image/png';
+        $url       = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(5));
+        $contenido = @file_get_contents($url);
+        if (!$contenido) return null;
+        $mime      = (new \finfo(FILEINFO_MIME_TYPE))->buffer($contenido);
         return 'data:' . $mime . ';base64,' . base64_encode($contenido);
     } catch (\Exception $e) {
-        return null;
+        dd('ERROR temporaryUrl: ' . $e->getMessage());
     }
 }
 }
