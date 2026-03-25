@@ -116,17 +116,16 @@ class RecetaController extends Controller
             'key_set'   => !empty(config('filesystems.disks.s3.key')),
         ]);
     }
-
-    private function imagenBase64(?string $path): ?string
-    {
-        if (!$path) return null;
-        try {
-            $contenido = Storage::disk('s3')->get($path);
-            if (!$contenido) return null;
-            $mime = Storage::disk('s3')->mimeType($path);
-            return 'data:' . $mime . ';base64,' . base64_encode($contenido);
-        } catch (\Exception $e) {
-            return null;
-        }
+private function imagenBase64(?string $path): ?string
+{
+    if (!$path) return null;
+    try {
+        $contenido = Storage::disk('s3')->get($path);
+        if (!$contenido) return null;
+        $mime = Storage::disk('s3')->mimeType($path);
+        return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+    } catch (\Exception $e) {
+        dd('ERROR: ' . $e->getMessage());
     }
+}
 }
