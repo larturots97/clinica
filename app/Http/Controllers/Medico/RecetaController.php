@@ -110,7 +110,14 @@ class RecetaController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
             'recetas.pdf',
             compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
-        )->setPaper('letter', 'portrait');
+        )
+        ->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled'      => true,
+            'defaultFont'          => 'Arial',
+            'dpi'                  => 150,
+        ])
+        ->setPaper('letter', 'portrait');
 
         return $pdf->stream('receta-' . $receta->folio . '.pdf');
     }
