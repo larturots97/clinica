@@ -7,6 +7,7 @@ use App\Models\Receta;
 use App\Models\Paciente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class RecetaController extends Controller
 {
@@ -39,16 +40,16 @@ class RecetaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'paciente_id'    => 'required|exists:pacientes,id',
-            'fecha'          => 'required|date',
-            'diagnostico'    => 'nullable|string',
-            'indicaciones'   => 'nullable|string',
-            'medicamentos'   => 'required|array|min:1',
-            'medicamentos.*.nombre'      => 'required|string',
-            'medicamentos.*.dosis'       => 'required|string',
-            'medicamentos.*.frecuencia'  => 'required|string',
-            'medicamentos.*.duracion'    => 'nullable|string',
-            'medicamentos.*.indicaciones'=> 'nullable|string',
+            'paciente_id'         => 'required|exists:pacientes,id',
+            'fecha'               => 'required|date',
+            'diagnostico'         => 'nullable|string',
+            'indicaciones'        => 'nullable|string',
+            'medicamentos'        => 'required|array|min:1',
+            'medicamentos.*.nombre'       => 'required|string',
+            'medicamentos.*.dosis'        => 'required|string',
+            'medicamentos.*.frecuencia'   => 'required|string',
+            'medicamentos.*.duracion'     => 'nullable|string',
+            'medicamentos.*.indicaciones' => 'nullable|string',
         ]);
 
         $medico = Auth::user()->medico;
@@ -91,6 +92,7 @@ class RecetaController extends Controller
 
         return view('medico.recetas.show', compact('receta'));
     }
+
     public function pdf(Receta $receta)
     {
         $medico = Auth::user()->medico;
@@ -102,9 +104,28 @@ class RecetaController extends Controller
         $receta->load('paciente', 'items', 'medico.especialidad');
         $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('recetas.pdf', compact('receta', 'config'))
-            ->setPaper('letter', 'portrait');
+        $logoBase64      = $this->imagenBase64($config?->logo);
+        $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'recetas.pdf',
+            compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
+        )->setPaper('letter', 'portrait');
 
         return $pdf->stream('receta-' . $receta->folio . '.pdf');
+    }
+
+    private function imagenBase64(?string $path): ?string
+    {
+        if (!$path) return null;
+        try {
+            $disk = Storage::disk(config('filesystems.default'));
+            if (!$disk->exists($path)) return null;
+            $contenido = $disk->get($path);
+            $mime      = $disk->mimeType($path);
+            return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

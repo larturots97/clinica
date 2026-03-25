@@ -6,28 +6,21 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; font-size: 11px; color: #3d3228; background: #faf8f4; padding: 0; }
         .page { width: 100%; min-height: 100vh; background: #faf8f4; display: flex; flex-direction: column; }
-
-        /* HEADER */
         .header { background: #c9b99a; padding: 18px 32px 16px; text-align: center; position: relative; }
         .logo-wrap { height: 100px; display: block; margin-bottom: 10px; }
         .logo-img { height: 130px; max-width: 280px; object-fit: contain; }
         .logo-initials { display: inline-block; width: 70px; height: 70px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.6); line-height: 70px; text-align: center; font-size: 24px; font-weight: bold; color: white; letter-spacing: 1px; }
         .header-nombre { font-size: 16px; font-weight: bold; color: white; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
         .header-sub { font-size: 9px; color: rgba(255,255,255,.8); letter-spacing: 1.5px; text-transform: uppercase; }
-
-        /* BODY */
         .body { padding: 24px 32px 90px; flex: 1; position: relative; }
         .logo-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 700px; opacity: 0.2; object-fit: contain; z-index: 0; }
         .body-content { position: relative; z-index: 1; }
-
-        /* TÍTULO RECETA */
         .receta-titulo { text-align: center; margin-bottom: 16px; }
         .receta-titulo-table { display: table; width: 100%; }
         .receta-titulo-line { display: table-cell; vertical-align: middle; }
         .receta-titulo-line-inner { height: 1px; background: #c9b99a; }
         .receta-titulo-text-cell { display: table-cell; white-space: nowrap; padding: 0 14px; vertical-align: middle; }
         .receta-titulo-text { font-size: 8.5px; letter-spacing: 4px; text-transform: uppercase; color: #a09080; font-family: Arial, sans-serif; }
-
         .fecha-row { text-align: right; font-size: 9px; color: #8a7d6b; letter-spacing: 1px; margin-bottom: 18px; }
         .folio-badge { display: inline-block; font-size: 10px; font-weight: bold; color: #8a7d6b; background: #f2ede5; border: 1px solid #d6cfc4; border-radius: 4px; padding: 2px 8px; float: left; margin-top: -2px; }
         .divider { width: 100%; height: 1px; background: #d6cfc4; margin: 14px 0; }
@@ -40,15 +33,10 @@
         .med-nombre { font-size: 12px; font-weight: bold; color: #3d3228; margin-bottom: 5px; }
         .med-detalle { font-size: 10px; color: #8a7d6b; line-height: 1.6; }
         .med-sep { color: #c9b99a; margin: 0 6px; }
-
-        /* FIRMA */
         .firma-wrap { margin-top: 30px; text-align: center; }
-        .firma-img { max-height: 50px; max-width: 130px; object-fit: contain; margin-bottom: 4px; }
         .firma-linea { width: 140px; border-top: 1px solid #8a7d6b; margin: 0 auto 6px; }
         .firma-nombre { font-size: 11px; font-weight: bold; color: #3d3228; letter-spacing: .5px; }
         .firma-sub { font-size: 9px; color: #8a7d6b; letter-spacing: .5px; margin-top: 2px; }
-
-        /* FOOTER */
         .footer { background: #c9b99a; padding: 12px 24px 14px; text-align: center; position: fixed; bottom: 0; left: 0; right: 0; }
         .footer-linea { width: 40px; border-top: 1px solid rgba(255,255,255,.5); margin: 0 auto 6px; }
         .footer-nombre { font-size: 10px; font-weight: bold; color: white; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
@@ -61,27 +49,6 @@
 </head>
 <body>
 <div class="page">
-
-    @php
-        $config = \App\Models\ConfiguracionMedico::where('medico_id', $receta->medico_id)->first();
-
-        // Función helper para convertir imagen (R2 o local) a base64 para DomPDF
-        function imagenBase64(?string $path): ?string {
-            if (!$path) return null;
-            try {
-                $contenido = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'))->get($path);
-                if (!$contenido) return null;
-                $mime = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'))->mimeType($path);
-                return 'data:' . $mime . ';base64,' . base64_encode($contenido);
-            } catch (\Exception $e) {
-                return null;
-            }
-        }
-
-        $logoBase64      = imagenBase64($config?->logo);
-        $logoFondoPath   = $config?->receta_logo_fondo ?: $config?->logo;
-        $logoFondoBase64 = imagenBase64($logoFondoPath);
-    @endphp
 
     {{-- HEADER --}}
     <div class="header">
@@ -105,14 +72,11 @@
 
     {{-- BODY --}}
     <div class="body">
-        {{-- Marca de agua --}}
         @if($logoFondoBase64)
         <img src="{{ $logoFondoBase64 }}" class="logo-watermark" alt="">
         @endif
 
         <div class="body-content">
-
-            {{-- TÍTULO RECETA MÉDICA --}}
             <div class="receta-titulo">
                 <div class="receta-titulo-table">
                     <div class="receta-titulo-line"><div class="receta-titulo-line-inner"></div></div>
@@ -121,14 +85,12 @@
                 </div>
             </div>
 
-            {{-- Folio + Fecha --}}
             <div class="clearfix" style="margin-bottom:14px;">
                 <span class="folio-badge">{{ $receta->folio }}</span>
                 <div class="fecha-row">FECHA: {{ \Carbon\Carbon::parse($receta->fecha)->locale('es')->isoFormat('D [/] MMMM [/] YYYY') }}</div>
             </div>
             <div class="divider"></div>
 
-            {{-- Paciente --}}
             <div style="margin-bottom:14px;">
                 <div class="section-label">Paciente</div>
                 <div class="paciente-nombre">{{ $receta->paciente->nombre_completo }}</div>
@@ -141,7 +103,6 @@
             </div>
             <div class="divider"></div>
 
-            {{-- Diagnóstico --}}
             @if($receta->diagnostico)
             <div class="section">
                 <div class="section-label">Diagnóstico</div>
@@ -149,7 +110,6 @@
             </div>
             @endif
 
-            {{-- Medicamentos --}}
             <div class="section">
                 <div class="section-label" style="margin-bottom:8px;">Medicamentos prescritos</div>
                 @foreach($receta->items as $i => $item)
@@ -165,7 +125,6 @@
                 @endforeach
             </div>
 
-            {{-- Indicaciones generales --}}
             @if($receta->indicaciones)
             <div class="section">
                 <div class="section-label">Indicaciones generales</div>
@@ -173,7 +132,6 @@
             </div>
             @endif
 
-            {{-- Firma --}}
             <div class="firma-wrap">
                 <div class="firma-linea"></div>
                 <div class="firma-nombre">{{ $receta->medico->nombre_completo }}</div>
@@ -182,8 +140,7 @@
                 <div class="firma-sub">Céd. Prof. {{ $receta->medico->cedula ?? $receta->medico->cedula_profesional }}</div>
                 @endif
             </div>
-
-        </div>{{-- /body-content --}}
+        </div>
     </div>
 
     {{-- FOOTER --}}
