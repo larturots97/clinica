@@ -94,47 +94,39 @@ class RecetaController extends Controller
     }
 
     public function pdf(Receta $receta)
-{
-    $medico = Auth::user()->medico;
+    {
+        $medico = Auth::user()->medico;
 
-    if ($receta->medico_id !== $medico->id) {
-        abort(403);
+        if ($receta->medico_id !== $medico->id) {
+            abort(403);
+        }
+
+        $receta->load('paciente', 'items', 'medico.especialidad');
+        $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
+
+        $logoBase64      = $this->imagenBase64($config?->logo);
+        $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
+
+        dd([
+            'logo_path' => $config?->logo,
+            'logo_len'  => strlen($logoBase64 ?? ''),
+            'fondo_len' => strlen($logoFondoBase64 ?? ''),
+            'disk'      => config('filesystems.default'),
+            'bucket'    => config('filesystems.disks.s3.bucket'),
+            'key_set'   => !empty(config('filesystems.disks.s3.key')),
+        ]);
     }
 
-    $receta->load('paciente', 'items', 'medico.especialidad');
-    $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
-
-    $logoBase64      = $this->imagenBase64($config?->logo);
-    $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
-
-    \Illuminate\Support\Facades\Log::info('PDF logos', [
-        'logo_path'       => $config?->logo,
-        'logo_len'        => strlen($logoBase64 ?? ''),
-        'fondo_len'       => strlen($logoFondoBase64 ?? ''),
-        'disk'            => config('filesystems.default'),
-        'bucket'          => config('filesystems.disks.s3.bucket'),
-    ]);
-
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
-        'recetas.pdf',
-        compact('receta', 'config', 'logoBase64', 'logoFondoBase64')
-    )
-    ->setOptions([
-        'isRemoteEnabled' => true,
-        'defaultFont'     => 'Arial',
-    ])
-    ->setPaper('letter', 'portrait');
-
-    return $pdf->stream('receta-' . $receta->folio . '.pdf');
-      $logoBase64 = $this->imagenBase64($config?->logo);
-
-dd([
-    'logo_len'  => strlen($logoBase64 ?? ''),
-    'disk'      => config('filesystems.default'),
-    'bucket'    => config('filesystems.disks.s3.bucket'),
-    'key_set'   => !empty(config('filesystems.disks.s3.key')),
-    'logo_path' => $config?->logo,
-]);
-}
-  
+    private function imagenBase64(?string $path): ?string
+    {
+        if (!$path) return null;
+        try {
+            $contenido = Storage::disk('s3')->get($path);
+            if (!$contenido) return null;
+            $mime = Storage::disk('s3')->mimeType($path);
+            return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
 }
