@@ -93,7 +93,7 @@ body { font-family:DejaVu Sans,sans-serif; font-size:9.5px; color:#1a1208; backg
 {{-- WATERMARK --}}
 @if($logoBase64)
 <div class="watermark">
-  <img src="{{ $logoBase64 }}" style="width:360px;">
+  <img src="{{ $logoBase64 }}" style="width:460px;">
 </div>
 @endif
 
