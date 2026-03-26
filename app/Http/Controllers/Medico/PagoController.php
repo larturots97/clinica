@@ -153,8 +153,16 @@ class PagoController extends Controller
 
         $factura = $pago;
 
-        $pdf = Pdf::loadView('medico.pagos.pdf', compact('factura', 'logoBase64', 'logoFondoBase64', 'firmaBase64'))
-                   ->setOptions(['isRemoteEnabled' => true, 'defaultFont' => 'Arial']);
+       $pdf = Pdf::loadView('medico.pagos.pdf', compact('factura', 'logoBase64', 'logoFondoBase64', 'firmaBase64'))
+           ->setOptions([
+               'isRemoteEnabled' => true,
+               'defaultFont'     => 'Arial',
+               'margin_top'      => 0,
+               'margin_bottom'   => 0,
+               'margin_left'     => 0,
+               'margin_right'    => 0,
+           ])
+           ->setPaper('letter', 'portrait');
 
         return $pdf->stream('recibo-' . $pago->folio . '.pdf');
     }

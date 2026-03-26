@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <style>
+            @page {
+                margin: 0;
+                padding: 0;
+            }
+            html, body {
+                margin: 0;
+                padding: 0;
+            }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Georgia, 'Times New Roman', serif; font-size: 11px; color: #3d3228; background: #faf8f4; }
         .page { width: 100%; min-height: 100vh; background: #faf8f4; display: flex; flex-direction: column; }

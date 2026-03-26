@@ -114,6 +114,10 @@ class RecetaController extends Controller
         ->setOptions([
             'isRemoteEnabled' => true,
             'defaultFont'     => 'Arial',
+            'margin_top'      => 0,
+            'margin_bottom'   => 0,
+            'margin_left'     => 0,
+            'margin_right'    => 0,
         ])
         ->setPaper('letter', 'portrait');
 
