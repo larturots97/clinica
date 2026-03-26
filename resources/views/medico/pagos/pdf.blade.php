@@ -106,8 +106,8 @@
     {{-- HEADER --}}
     <div class="header">
         <div class="logo-wrap">
-            @if($config && $config->logo)
-                <img src="{{ storage_path('app/public/' . $config->logo) }}" class="logo-img" alt="Logo">
+            @if($logoBase64)
+                <img src="{{ $logoBase64 }}" class="logo-img" alt="Logo">
             @else
                 <div class="logo-initials">
                     {{ strtoupper(substr($factura->medico->nombre, 0, 1)) }}{{ strtoupper(substr($factura->medico->apellido_paterno ?? $factura->medico->apellidos ?? '', 0, 1)) }}
@@ -127,9 +127,8 @@
     <div class="body">
 
         {{-- Marca de agua --}}
-        @if($config && ($config->receta_logo_fondo ?? $config->logo))
-            @php $logoWm = $config->receta_logo_fondo ?? $config->logo; @endphp
-            <img src="{{ storage_path('app/public/' . $logoWm) }}" class="logo-watermark" alt="">
+        @if($logoFondoBase64)
+            <img src="{{ $logoFondoBase64 }}" class="logo-watermark" alt="">
         @endif
 
         <div class="body-content">
@@ -157,14 +156,14 @@
             <div class="paciente-label">Paciente</div>
             <div class="paciente-nombre">{{ $factura->paciente->nombre_completo }}</div>
             @if($factura->paciente->expediente ?? null)
-            <div class="paciente-dato">Exp: {{ $factura->paciente->expediente }}</div>
+                <div class="paciente-dato">Exp: {{ $factura->paciente->expediente }}</div>
             @endif
             @if($factura->paciente->telefono || $factura->paciente->email)
-            <div class="paciente-dato">
-                @if($factura->paciente->telefono) {{ $factura->paciente->telefono }} @endif
-                @if($factura->paciente->telefono && $factura->paciente->email) &nbsp;·&nbsp; @endif
-                @if($factura->paciente->email) {{ $factura->paciente->email }} @endif
-            </div>
+                <div class="paciente-dato">
+                    @if($factura->paciente->telefono) {{ $factura->paciente->telefono }} @endif
+                    @if($factura->paciente->telefono && $factura->paciente->email) &nbsp;·&nbsp; @endif
+                    @if($factura->paciente->email) {{ $factura->paciente->email }} @endif
+                </div>
             @endif
 
             {{-- Ornamento --}}
@@ -235,9 +234,7 @@
                     </div>
                     <div class="pago-col">
                         <div class="pago-label">Estado</div>
-                        <span class="pago-badge">
-                            {{ ucfirst($factura->estado) }}
-                        </span>
+                        <span class="pago-badge">{{ ucfirst($factura->estado) }}</span>
                     </div>
                 </div>
             </div>
@@ -252,8 +249,8 @@
 
             {{-- Firma --}}
             <div class="firma-wrap">
-                @if($config && $factura->medico->firma)
-                    <img src="{{ storage_path('app/public/' . $factura->medico->firma) }}" class="firma-img" alt="Firma">
+                @if($firmaBase64)
+                    <img src="{{ $firmaBase64 }}" class="firma-img" alt="Firma">
                 @endif
                 <div class="firma-linea"></div>
                 <div class="firma-nombre">{{ $factura->medico->nombre_completo }}</div>

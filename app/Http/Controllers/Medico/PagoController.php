@@ -8,6 +8,7 @@ use App\Models\FacturaItem;
 use App\Models\Paciente;
 use App\Models\Clinica;
 use App\Models\Medico;
+use App\Models\ConfiguracionMedico;
 use App\Mail\ReciboPacienteMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,7 +35,7 @@ class PagoController extends Controller
 
         $facturas = $query->paginate(15);
 
-        $totalMes  = Factura::where('medico_id', $medico->id)
+        $totalMes = Factura::where('medico_id', $medico->id)
             ->whereMonth('fecha', now()->month)
             ->whereYear('fecha', now()->year)
             ->sum('total');
@@ -60,12 +61,12 @@ class PagoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'paciente_id'                     => 'required|exists:pacientes,id',
-            'fecha'                           => 'required|date',
-            'conceptos'                       => 'required|array|min:1',
-            'conceptos.*.concepto'            => 'required|string',
-            'conceptos.*.cantidad'            => 'required|integer|min:1',
-            'conceptos.*.precio_unitario'     => 'required|numeric|min:0',
+            'paciente_id'                 => 'required|exists:pacientes,id',
+            'fecha'                       => 'required|date',
+            'conceptos'                   => 'required|array|min:1',
+            'conceptos.*.concepto'        => 'required|string',
+            'conceptos.*.cantidad'        => 'required|integer|min:1',
+            'conceptos.*.precio_unitario' => 'required|numeric|min:0',
         ]);
 
         $medico  = Auth::user()->medico;
@@ -143,31 +144,40 @@ class PagoController extends Controller
         $medico = Auth::user()->medico;
         if ($pago->medico_id !== $medico->id) abort(403);
         $pago->load(['paciente', 'items', 'medico.especialidad', 'clinica']);
+
+        $config = ConfiguracionMedico::where('medico_id', $pago->medico_id)->first();
+
+        $logoBase64      = $this->imagenBase64($config->logo ?? null);
+        $logoFondoBase64 = $logoBase64;
+        $firmaBase64     = $this->imagenBase64($config->firma ?? null);
+
         $factura = $pago;
-        $pdf = Pdf::loadView('medico.pagos.pdf', compact('factura'));
+
+        $pdf = Pdf::loadView('medico.pagos.pdf', compact('factura', 'logoBase64', 'logoFondoBase64', 'firmaBase64'))
+                   ->setOptions(['isRemoteEnabled' => true, 'defaultFont' => 'Arial']);
+
         return $pdf->stream('recibo-' . $pago->folio . '.pdf');
     }
 
     public function enviarCorreo(Request $request, Factura $pago)
-{
-    $medico = Auth::user()->medico;
-    if ($pago->medico_id !== $medico->id) abort(403);
+    {
+        $medico = Auth::user()->medico;
+        if ($pago->medico_id !== $medico->id) abort(403);
 
-    $request->validate([
-        'email_destino' => 'required|email',
-    ]);
+        $request->validate([
+            'email_destino' => 'required|email',
+        ]);
 
-    $pago->load(['paciente', 'items', 'medico.especialidad', 'clinica']);
+        $pago->load(['paciente', 'items', 'medico.especialidad', 'clinica']);
 
-    // Guardar email en expediente si se marcó la opción
-    if ($request->guardar_email) {
-        $pago->paciente->update(['email' => $request->email_destino]);
+        if ($request->guardar_email) {
+            $pago->paciente->update(['email' => $request->email_destino]);
+        }
+
+        Mail::to($request->email_destino)->send(new ReciboPacienteMail($pago));
+
+        return back()->with('success', '✓ Recibo enviado a ' . $request->email_destino);
     }
-
-    Mail::to($request->email_destino)->send(new ReciboPacienteMail($pago));
-
-    return back()->with('success', '✓ Recibo enviado a ' . $request->email_destino);
-}
 
     public function subirLogo(Request $request)
     {
@@ -185,5 +195,31 @@ class PagoController extends Controller
         $path = $request->file('firma')->store('medicos/firmas', 'public');
         $medico->update(['firma' => $path]);
         return back()->with('success', 'Firma actualizada correctamente.');
+    }
+
+    private function imagenBase64(?string $path): ?string
+    {
+        if (!$path) return null;
+        try {
+            $client = new \Aws\S3\S3Client([
+                'version'     => 'latest',
+                'region'      => 'auto',
+                'endpoint'    => config('filesystems.disks.s3.endpoint'),
+                'credentials' => [
+                    'key'    => config('filesystems.disks.s3.key'),
+                    'secret' => config('filesystems.disks.s3.secret'),
+                ],
+                'use_path_style_endpoint' => false,
+            ]);
+            $result    = $client->getObject([
+                'Bucket' => config('filesystems.disks.s3.bucket'),
+                'Key'    => $path,
+            ]);
+            $contenido = (string) $result['Body'];
+            $mime      = $result['ContentType'] ?? 'image/png';
+            return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }
