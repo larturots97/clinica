@@ -31,16 +31,6 @@
   .sub-item strong { color: #1e293b; }
   .sep { border: none; border-top: 1.5px solid #b08d6e; margin: 10px 0; }
   .sep-light { border: none; border-top: 1px dashed #e2e8f0; margin: 6px 0; }
-  .firma-section { display: table; width: 100%; margin-top: 20px; }
-  .firma-cell { display: table-cell; text-align: center; padding: 0 24px; }
-  .firma-img-wrap { height: 70px; display: block; text-align: center; margin-bottom: 0px; padding-top: 10px; }
-  .firma-img-wrap img { vertical-align: bottom; margin-bottom: 0; }
-  .firma-line { border-top: 1.5px solid #334155; padding-top: 4px; margin-top: 4px; }
-  .firma-name  { font-size: 9.5px; font-weight: 700; color: #1e293b; }
-  .firma-label { font-size: 8px; color: #64748b; margin-top: 1px; }
-  .prox-cita { margin-top: 10px; }
-  .prox-label { font-size: 9.5px; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
-  .prox-line  { border-bottom: 1.5px solid #b08d6e; width: 100%; display: block; height: 14px; }
   .footer { margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 6px; display: table; width: 100%; }
   .footer-left  { display: table-cell; font-size: 7.5px; color: #94a3b8; }
   .footer-right { display: table-cell; text-align: right; font-size: 7.5px; color: #94a3b8; }
@@ -52,46 +42,46 @@
 <div class="page">
 
   {{-- Marca de agua --}}
-  @if($config?->logo)
+  @if($logoBase64)
   <div class="watermark">
-    <img src="{{ storage_path('app/public/' . $config->logo) }}" alt="">
+    <img src="{{ $logoBase64 }}" alt="">
   </div>
   @endif
 
   <div class="content">
-{{-- HEADER --}}
-<div class="header">
-  <div class="header-left">
-    <div style="display:table; width:100%;">
-      @if($config?->logo)
-      <div style="display:table-cell; vertical-align:middle; width:90px; padding-right:10px;">
-        <img src="{{ storage_path('app/public/' . $config->logo) }}"
-             style="max-height:200px; max-width:100px; object-fit:contain; display:block;">
-      </div>
-      @endif
-      <div style="display:table-cell; vertical-align:middle;">
-        <div class="clinica-name">{{ $config?->clinica_nombre ?? $tratamiento->medico?->clinica?->nombre ?? 'Clinica Medico Estetica' }}</div>
-        <div class="clinica-sub">
-          {{ $config?->clinica_direccion ?? $tratamiento->medico?->clinica?->direccion ?? '' }}
-          @if($config?->clinica_ciudad ?? $tratamiento->medico?->clinica?->ciudad ?? '')
-            &nbsp;&mdash;&nbsp;{{ $config?->clinica_ciudad ?? $tratamiento->medico?->clinica?->ciudad ?? '' }}
+
+    {{-- HEADER --}}
+    <div class="header">
+      <div class="header-left">
+        <div style="display:table; width:100%;">
+          @if($logoBase64)
+          <div style="display:table-cell; vertical-align:middle; width:90px; padding-right:10px;">
+            <img src="{{ $logoBase64 }}" style="max-height:60px; max-width:100px; object-fit:contain; display:block;">
+          </div>
           @endif
+          <div style="display:table-cell; vertical-align:middle;">
+            <div class="clinica-name">{{ $config?->clinica_nombre ?? $tratamiento->medico?->clinica?->nombre ?? 'Clinica Medico Estetica' }}</div>
+            <div class="clinica-sub">
+              {{ $config?->clinica_direccion ?? $tratamiento->medico?->clinica?->direccion ?? '' }}
+              @if($config?->clinica_ciudad ?? $tratamiento->medico?->clinica?->ciudad ?? '')
+                &nbsp;&mdash;&nbsp;{{ $config?->clinica_ciudad ?? $tratamiento->medico?->clinica?->ciudad ?? '' }}
+              @endif
+            </div>
+            <div class="clinica-contact">
+              @if($config?->clinica_telefono) Tel: {{ $config->clinica_telefono }} @if($config?->clinica_email) &nbsp;&middot;&nbsp; @endif @endif
+              @if($config?->clinica_email) {{ $config->clinica_email }} &nbsp;&middot;&nbsp; @endif
+              Dr(a). {{ $tratamiento->medico?->nombre }} {{ $tratamiento->medico?->apellidos }}
+              &nbsp;&middot;&nbsp; Cedula: {{ $tratamiento->medico?->cedula_profesional ?? '-' }}
+            </div>
+          </div>
         </div>
-        <div class="clinica-contact">
-          @if($config?->clinica_telefono) Tel: {{ $config->clinica_telefono }} @if($config?->clinica_email) &nbsp;&middot;&nbsp; @endif @endif
-          @if($config?->clinica_email) {{ $config->clinica_email }} &nbsp;&middot;&nbsp; @endif
-          Dr(a). {{ $tratamiento->medico?->nombre }} {{ $tratamiento->medico?->apellidos }}
-          &nbsp;&middot;&nbsp; Cedula: {{ $tratamiento->medico?->cedula_profesional ?? '-' }}
-        </div>
+      </div>
+      <div class="header-right">
+        <div class="doc-main-title">Consentimiento Informado<br>para Pacientes</div>
+        <div class="doc-subtitle">Tu bienestar, nuestra prioridad</div>
+        <div class="fecha-box"><strong>Fecha:</strong> {{ now()->format('d') }} / {{ now()->format('m') }} / {{ now()->format('Y') }}</div>
       </div>
     </div>
-  </div>
-  <div class="header-right">
-    <div class="doc-main-title">Consentimiento Informado<br>para Pacientes</div>
-    <div class="doc-subtitle">Tu bienestar, nuestra prioridad</div>
-    <div class="fecha-box"><strong>Fecha:</strong> {{ now()->format('d') }} / {{ now()->format('m') }} / {{ now()->format('Y') }}</div>
-  </div>
-</div>
 
     {{-- DATOS PACIENTE --}}
     <div class="campos">
@@ -105,7 +95,7 @@
       </div>
     </div>
 
-    {{-- PUNTO 1 — siempre fijo con datos del tratamiento --}}
+    {{-- PUNTO 1 --}}
     <div class="punto">
       <span class="punto-num">1) </span>
       <span class="punto-text">Por medio de la presente autorizo a la <strong>Dr(a). {{ $tratamiento->medico?->nombre }} {{ $tratamiento->medico?->apellidos }}</strong>, con numero de cedula profesional <strong>{{ $tratamiento->medico?->cedula_profesional ?? '__________' }}</strong> a realizar el tratamiento estetico de minima invasion de <span class="blank">{{ $tratamiento->titulo ?? $tratamiento->tipoTratamiento?->nombre }}</span>, con numero de lote <span class="blank-sm">{{ $tratamiento->producto_lote ?? '' }}</span> y fecha de caducidad del biologico: <span class="blank-sm">{{ $tratamiento->producto_caducidad ? \Carbon\Carbon::parse($tratamiento->producto_caducidad)->format('m/Y') : '' }}</span> en las siguientes zonas: <span class="blank">{{ $tratamiento->zonas?->pluck('zona_label')->filter()->join(', ') }}</span></span>
@@ -113,7 +103,7 @@
 
     <hr class="sep">
 
-    {{-- PUNTO 2 — configurable o por defecto --}}
+    {{-- PUNTO 2 --}}
     @if(!empty($config?->consentimiento_punto_2))
       <div class="punto"><span class="punto-num">2) </span><span class="punto-text">{!! nl2br(e($config->consentimiento_punto_2)) !!}</span></div>
     @else
@@ -127,26 +117,26 @@
       </div>
     @endif
 
-   {{-- PUNTO 3 — configurable o fijo --}}
-  <div class="punto">
-    <span class="punto-num">3) </span>
-    @if(!empty($config?->consentimiento_punto_3))
-      <span class="punto-text">{!! nl2br(e($config->consentimiento_punto_3)) !!}</span>
-    @else
-      <span class="punto-text">Acepto que el resultado del tratamiento y la duracion del efecto pueden variar de un paciente a otro por lo que eximo a la <strong>Dr(a). {{ $tratamiento->medico?->nombre }} {{ $tratamiento->medico?->apellidos }}</strong> de la responsabilidad, al tratarse de la aplicacion de un producto biologico, por lo que previo al procedimiento se me informa que:</span>
-      <div class="sub-item">Existen riesgos y beneficios que conlleva el tratamiento.</div>
-      <div class="sub-item">El tiempo de permanencia del resultado puede variar por causas propias del metabolismo corporal normal.</div>
-      <div class="sub-item">Puede haber variantes anatomicas propias de cada individuo que pudieran interferir con el resultado deseado.</div>
-      <div class="sub-item">Se pueden requerir una o mas sesiones en el futuro o tratamientos coadyuvantes para mantener los resultados.</div>
-      <div class="sub-item">Por tratarse de zonas donde hay irrigacion, puede haber sangrado al momento de realizar el procedimiento.</div>
-      <div class="sub-item">Debo seguir al pie de la letra las indicaciones y cuidados posteriores al tratamiento realizado.</div>
-      <div class="sub-item">La practica de la medicina no es una ciencia exacta, y aunque se esperan buenos resultados, no hay garantia explicita o implicita sobre los resultados.</div>
-    @endif
-  </div>
+    {{-- PUNTO 3 --}}
+    <div class="punto">
+      <span class="punto-num">3) </span>
+      @if(!empty($config?->consentimiento_punto_3))
+        <span class="punto-text">{!! nl2br(e($config->consentimiento_punto_3)) !!}</span>
+      @else
+        <span class="punto-text">Acepto que el resultado del tratamiento y la duracion del efecto pueden variar de un paciente a otro por lo que eximo a la <strong>Dr(a). {{ $tratamiento->medico?->nombre }} {{ $tratamiento->medico?->apellidos }}</strong> de la responsabilidad, al tratarse de la aplicacion de un producto biologico, por lo que previo al procedimiento se me informa que:</span>
+        <div class="sub-item">Existen riesgos y beneficios que conlleva el tratamiento.</div>
+        <div class="sub-item">El tiempo de permanencia del resultado puede variar por causas propias del metabolismo corporal normal.</div>
+        <div class="sub-item">Puede haber variantes anatomicas propias de cada individuo que pudieran interferir con el resultado deseado.</div>
+        <div class="sub-item">Se pueden requerir una o mas sesiones en el futuro o tratamientos coadyuvantes para mantener los resultados.</div>
+        <div class="sub-item">Por tratarse de zonas donde hay irrigacion, puede haber sangrado al momento de realizar el procedimiento.</div>
+        <div class="sub-item">Debo seguir al pie de la letra las indicaciones y cuidados posteriores al tratamiento realizado.</div>
+        <div class="sub-item">La practica de la medicina no es una ciencia exacta, y aunque se esperan buenos resultados, no hay garantia explicita o implicita sobre los resultados.</div>
+      @endif
+    </div>
 
     <hr class="sep-light">
 
-    {{-- PUNTOS 4-12 — configurables o por defecto --}}
+    {{-- PUNTOS 4-12 --}}
     @php
       $defaultPuntos = [
         4  => 'Confirmo que no he omitido datos sobre mis antecedentes clinicos, tales como intervenciones, alergias, patologias existentes, riesgos personales, etc.',
@@ -164,10 +154,7 @@
     @for($i = 4; $i <= 12; $i++)
       @php $texto = !empty($config?->{"consentimiento_punto_$i"}) ? $config->{"consentimiento_punto_$i"} : ($defaultPuntos[$i] ?? ''); @endphp
       @if($texto)
-        <div class="punto">
-          <span class="punto-num">{{ $i }}) </span>
-          <span class="punto-text">{!! nl2br(e($texto)) !!}</span>
-        </div>
+        <div class="punto"><span class="punto-num">{{ $i }}) </span><span class="punto-text">{!! nl2br(e($texto)) !!}</span></div>
         @if($i === 7) <hr class="sep-light"> @endif
         @if($i === 11) <hr class="sep-light"> @endif
       @endif
@@ -175,43 +162,35 @@
 
     <hr class="sep-light">
 
-      {{-- FIRMAS --}}
-<table style="width:100%; margin-top:20px; border-collapse:collapse;">
-  <tr>
-
-    {{-- Paciente --}}
-    <td style="width:40%; text-align:center; padding:0 10px; vertical-align:bottom;">
-      @if($tratamiento->firma_paciente)
-        <img src="{{ $tratamiento->firma_paciente }}"
-             style="max-height:60px; max-width:160px; display:block; margin:0 auto;">
-      @endif
-      <div style="border-top:1.5px solid #334155; padding-top:4px; margin-top:2px;">
-        <div style="font-size:9.5px; font-weight:700; color:#1e293b;">{{ $tratamiento->paciente?->nombre }} {{ $tratamiento->paciente?->apellidos }}</div>
-        <div style="font-size:8px; color:#64748b; margin-top:1px;">Nombre completo y firma del paciente</div>
-        @if($tratamiento->firma_paciente_at)
-          <div style="font-size:7px; color:#94a3b8; margin-top:1px;">Firmado el {{ \Carbon\Carbon::parse($tratamiento->firma_paciente_at)->format('d/m/Y H:i') }}</div>
-        @endif
-      </div>
-    </td>
-
-
-    {{-- Médico --}}
-    <td style="width:32%; text-align:center; padding:0 10px; vertical-align:bottom;">
-      @if($config?->firma)
-        <img src="{{ storage_path('app/public/' . $config->firma) }}"
-             style="max-height:60px; max-width:150px; display:block; margin:0 auto;">
-      @else
-        <div style="height:60px;"></div>
-      @endif
-      <div style="border-top:1.5px solid #334155; padding-top:4px; margin-top:2px;">
-        <div style="font-size:9.5px; font-weight:700; color:#1e293b;">Dr(a). {{ $tratamiento->medico?->nombre }} {{ $tratamiento->medico?->apellidos }}</div>
-        <div style="font-size:8px; color:#64748b; margin-top:1px;">Firma del Médico autorizado</div>
-        <div style="font-size:7px; color:#94a3b8; margin-top:1px;">Cédula: {{ $tratamiento->medico?->cedula_profesional ?? '-' }}</div>
-      </div>
-    </td>
-
-  </tr>
-</table>
+    {{-- FIRMAS --}}
+    <table style="width:100%; margin-top:20px; border-collapse:collapse;">
+      <tr>
+        <td style="width:40%; text-align:center; padding:0 10px; vertical-align:bottom;">
+          @if($tratamiento->firma_paciente)
+            <img src="{{ $tratamiento->firma_paciente }}" style="max-height:60px; max-width:160px; display:block; margin:0 auto;">
+          @endif
+          <div style="border-top:1.5px solid #334155; padding-top:4px; margin-top:2px;">
+            <div style="font-size:9.5px; font-weight:700; color:#1e293b;">{{ $tratamiento->paciente?->nombre }} {{ $tratamiento->paciente?->apellidos }}</div>
+            <div style="font-size:8px; color:#64748b; margin-top:1px;">Nombre completo y firma del paciente</div>
+            @if($tratamiento->firma_paciente_at)
+              <div style="font-size:7px; color:#94a3b8; margin-top:1px;">Firmado el {{ \Carbon\Carbon::parse($tratamiento->firma_paciente_at)->format('d/m/Y H:i') }}</div>
+            @endif
+          </div>
+        </td>
+        <td style="width:32%; text-align:center; padding:0 10px; vertical-align:bottom;">
+          @if($firmaBase64)
+            <img src="{{ $firmaBase64 }}" style="max-height:60px; max-width:150px; display:block; margin:0 auto;">
+          @else
+            <div style="height:60px;"></div>
+          @endif
+          <div style="border-top:1.5px solid #334155; padding-top:4px; margin-top:2px;">
+            <div style="font-size:9.5px; font-weight:700; color:#1e293b;">Dr(a). {{ $tratamiento->medico?->nombre }} {{ $tratamiento->medico?->apellidos }}</div>
+            <div style="font-size:8px; color:#64748b; margin-top:1px;">Firma del Médico autorizado</div>
+            <div style="font-size:7px; color:#94a3b8; margin-top:1px;">Cédula: {{ $tratamiento->medico?->cedula_profesional ?? '-' }}</div>
+          </div>
+        </td>
+      </tr>
+    </table>
 
     {{-- FOOTER --}}
     <div class="footer">

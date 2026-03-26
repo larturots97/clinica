@@ -214,30 +214,64 @@ class TratamientoEsteticoController extends Controller
     }
 
    public function pdf(TratamientoEstetico $tratamientosEstetico)
-    {
-        $tratamiento = $tratamientosEstetico;
-        $tratamiento->load(['paciente', 'tipoTratamiento', 'zonas', 'medico', 'producto']);
+{
+    $tratamiento = $tratamientosEstetico;
+    $tratamiento->load(['paciente', 'tipoTratamiento', 'zonas', 'medico', 'producto']);
 
-        $mapaBase64 = $this->generarMapaBase64($tratamiento);
-        $config = \App\Models\ConfiguracionMedico::where('medico_id', $tratamiento->medico_id)->first();
+    $mapaBase64  = $this->generarMapaBase64($tratamiento);
+    $config      = \App\Models\ConfiguracionMedico::where('medico_id', $tratamiento->medico_id)->first();
+    $logoBase64  = $this->imagenBase64($config?->logo);
 
-        $pdf = Pdf::loadView('medico.tratamientos-esteticos.pdf', compact('tratamiento', 'mapaBase64', 'config'))
-            ->setPaper('letter', 'portrait');
+    $pdf = Pdf::loadView('medico.tratamientos-esteticos.pdf', compact('tratamiento', 'mapaBase64', 'config', 'logoBase64'))
+        ->setOptions(['isRemoteEnabled' => true, 'defaultFont' => 'Arial'])
+        ->setPaper('letter', 'portrait');
 
-        return $pdf->stream('historial-estetico-' . $tratamiento->id . '.pdf');
+    return $pdf->stream('historial-estetico-' . $tratamiento->id . '.pdf');
+}
+
+public function consentimiento(TratamientoEstetico $tratamientosEstetico)
+{
+    $tratamiento = $tratamientosEstetico;
+    $tratamiento->load(['paciente', 'tipoTratamiento', 'medico.clinica', 'producto', 'zonas']);
+
+    $config     = \App\Models\ConfiguracionMedico::where('medico_id', $tratamiento->medico_id)->first();
+    $logoBase64 = $this->imagenBase64($config?->logo);
+    $firmaBase64 = $this->imagenBase64($config?->firma);
+
+    $pdf = Pdf::loadView('medico.tratamientos-esteticos.consentimiento-pdf', compact('tratamiento', 'config', 'logoBase64', 'firmaBase64'))
+        ->setOptions(['isRemoteEnabled' => true, 'defaultFont' => 'Arial'])
+        ->setPaper('letter', 'portrait');
+
+    return $pdf->stream('consentimiento-' . $tratamiento->id . '.pdf');
+}
+
+private function imagenBase64(?string $path): ?string
+{
+    if (!$path) return null;
+    try {
+        $client = new \Aws\S3\S3Client([
+            'version'     => 'latest',
+            'region'      => 'auto',
+            'endpoint'    => config('filesystems.disks.s3.endpoint'),
+            'credentials' => [
+                'key'    => config('filesystems.disks.s3.key'),
+                'secret' => config('filesystems.disks.s3.secret'),
+            ],
+            'use_path_style_endpoint' => false,
+        ]);
+
+        $result    = $client->getObject([
+            'Bucket' => config('filesystems.disks.s3.bucket'),
+            'Key'    => $path,
+        ]);
+
+        $contenido = (string) $result['Body'];
+        $mime      = $result['ContentType'] ?? 'image/png';
+        return 'data:' . $mime . ';base64,' . base64_encode($contenido);
+    } catch (\Exception $e) {
+        return null;
     }
-    public function consentimiento(TratamientoEstetico $tratamientosEstetico)
-    {
-        $tratamiento = $tratamientosEstetico;
-        $tratamiento->load(['paciente', 'tipoTratamiento', 'medico.clinica', 'producto', 'zonas']);
-
-        $config = \App\Models\ConfiguracionMedico::where('medico_id', $tratamiento->medico_id)->first();
-
-        $pdf = Pdf::loadView('medico.tratamientos-esteticos.consentimiento-pdf', compact('tratamiento', 'config'))
-            ->setPaper('letter', 'portrait');
-
-        return $pdf->stream('consentimiento-' . $tratamiento->id . '.pdf');
-    }
+}
    public function guardarFirmaPaciente(Request $request, TratamientoEstetico $tratamientosEstetico)
     {
         // Si ya está bloqueado, no permitir cambios
