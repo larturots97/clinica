@@ -105,7 +105,7 @@ class RecetaController extends Controller
         $config = \App\Models\ConfiguracionMedico::where('medico_id', $medico->id)->first();
 
         $logoBase64      = $this->imagenBase64($config?->logo);
-        $logoFondoBase64 = $this->imagenBase64($config?->receta_logo_fondo ?: $config?->logo);
+        $logoFondoBase64 = $logoBase64; // mismo logo para el fondo
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
             'recetas.pdf',
