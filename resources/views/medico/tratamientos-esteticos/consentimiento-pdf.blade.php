@@ -41,7 +41,6 @@
 <body>
 <div class="page">
 
-  {{-- Marca de agua --}}
   @if($logoBase64)
   <div class="watermark">
     <img src="{{ $logoBase64 }}" alt="">
@@ -96,9 +95,29 @@
     </div>
 
     {{-- PUNTO 1 --}}
+    @php
+      $zonaLabelsMap = [
+        'F'   => 'Frente',
+        'GL'  => 'Glabela (entrecejo)',
+        'PGI' => 'Patas de gallo izq.',
+        'PGD' => 'Patas de gallo der.',
+        'BL'  => 'Bunny lines',
+        'L'   => 'Labios / Peribucales',
+        'MI'  => 'Masetero izq.',
+        'MD'  => 'Masetero der.',
+        'C'   => 'Cuello',
+      ];
+      $zonasTexto = $tratamiento->zonas?->map(function($z) use ($zonaLabelsMap) {
+          return $z->zona_label ?: ($zonaLabelsMap[$z->zona] ?? $z->zona);
+      })->filter()->unique()->join(', ');
+
+      if (!$zonasTexto && $tratamiento->zonas_texto) {
+          $zonasTexto = $tratamiento->zonas_texto;
+      }
+    @endphp
     <div class="punto">
       <span class="punto-num">1) </span>
-      <span class="punto-text">Por medio de la presente autorizo a la <strong>Dr(a). {{ $tratamiento->medico?->nombre }} {{ $tratamiento->medico?->apellidos }}</strong>, con numero de cedula profesional <strong>{{ $tratamiento->medico?->cedula_profesional ?? '__________' }}</strong> a realizar el tratamiento estetico de minima invasion de <span class="blank">{{ $tratamiento->titulo ?? $tratamiento->tipoTratamiento?->nombre }}</span>, con numero de lote <span class="blank-sm">{{ $tratamiento->producto_lote ?? '' }}</span> y fecha de caducidad del biologico: <span class="blank-sm">{{ $tratamiento->producto_caducidad ? \Carbon\Carbon::parse($tratamiento->producto_caducidad)->format('m/Y') : '' }}</span> en las siguientes zonas: <span class="blank">{{ $tratamiento->zonas?->pluck('zona_label')->filter()->join(', ') }}</span></span>
+      <span class="punto-text">Por medio de la presente autorizo a la <strong>Dr(a). {{ $tratamiento->medico?->nombre }} {{ $tratamiento->medico?->apellidos }}</strong>, con numero de cedula profesional <strong>{{ $tratamiento->medico?->cedula_profesional ?? '__________' }}</strong> a realizar el tratamiento estetico de minima invasion de <span class="blank">{{ $tratamiento->titulo ?? $tratamiento->tipoTratamiento?->nombre }}</span>, con numero de lote <span class="blank-sm">{{ $tratamiento->producto_lote ?? '' }}</span> y fecha de caducidad del biologico: <span class="blank-sm">{{ $tratamiento->producto_caducidad ? \Carbon\Carbon::parse($tratamiento->producto_caducidad)->format('m/Y') : '' }}</span> en las siguientes zonas: <span class="blank">{{ $zonasTexto ?: '________________________' }}</span></span>
     </div>
 
     <hr class="sep">
