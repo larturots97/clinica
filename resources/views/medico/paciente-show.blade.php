@@ -47,6 +47,15 @@ $antecedentesLabels = [
             <i class="fa-solid fa-wand-magic-sparkles"></i> Nuevo tratamiento
         </a>
         @endif
+        <form action="{{ route('medico.pacientes.destroy', $paciente) }}" method="POST" style="display:inline;">
+            @csrf
+            @method('DELETE')
+            <button type="submit"
+                onclick="return confirm('¿Eliminar este paciente? Esta acción no se puede deshacer.')"
+                style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;font-family:inherit;">
+                <i class="fa-solid fa-trash"></i> Eliminar paciente
+            </button>
+        </form>
     </div>
 
     <button onclick="document.getElementById('modal-expediente').style.display='flex'"

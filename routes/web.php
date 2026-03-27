@@ -5,6 +5,13 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Medico\LandingConfigController;
 
+// ── FIX TEMPORAL DE ROLES (eliminar después de usar) ─────────────────────────
+Route::get('/fix-roles', function() {
+    $user = \App\Models\User::where('email', 'medico@clinica.com')->first();
+    $user->syncRoles(['medico']);
+    return 'Rol asignado: ' . $user->getRoleNames();
+});
+
 // ── Landing pública ───────────────────────────────────────────────────────────
 Route::get('/', [\App\Http\Controllers\LandingController::class, 'index'])->name('landing');
 Route::post('/agendar', [\App\Http\Controllers\LandingController::class, 'agendar'])->name('landing.agendar');
@@ -60,7 +67,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pacientes/{paciente}/edit', [\App\Http\Controllers\Medico\PacienteController::class, 'edit'])->name('pacientes.edit');
         Route::put('/pacientes/{paciente}', [\App\Http\Controllers\Medico\PacienteController::class, 'update'])->name('pacientes.update');
         Route::get('/pacientes/{paciente}', [\App\Http\Controllers\Medico\PacienteController::class, 'show'])->name('pacientes.show');
-        
+        Route::delete('/pacientes/{paciente}', [\App\Http\Controllers\Medico\PacienteController::class, 'destroy'])->name('pacientes.destroy');
 
         Route::get('/historial', [\App\Http\Controllers\Medico\HistorialController::class, 'index'])->name('historial.index');
         Route::get('/historial/create', [\App\Http\Controllers\Medico\HistorialController::class, 'create'])->name('historial.create');

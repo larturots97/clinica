@@ -93,7 +93,6 @@ class PacienteController extends Controller
         $medico   = Auth::user()->medico ?? null;
         $citaWeb  = null;
 
-        // Si viene desde una cita web, pre-rellenar datos
         if ($request->desde_cita) {
             $citaWeb = Cita::where('id', $request->desde_cita)
                 ->where('medico_id', $medico->id)
@@ -123,8 +122,7 @@ class PacienteController extends Controller
             'tipo_piel'          => 'nullable|array',
             'condiciones_piel'   => 'nullable|array',
             'nota_medica'        => 'nullable|string',
-            'tipo_sangre' => 'nullable|string|max:5',
-
+            'tipo_sangre'        => 'nullable|string|max:5',
         ]);
 
         $apellidos = trim($request->apellido_paterno . ' ' . $request->apellido_materno);
@@ -149,10 +147,9 @@ class PacienteController extends Controller
             'condiciones_piel'   => $request->condiciones_piel ?? [],
             'antecedentes_extra' => $request->antecedentes_extra ?? [],
             'nota_medica'        => $request->nota_medica,
-            'tipo_sangre' => $request->tipo_sangre,
+            'tipo_sangre'        => $request->tipo_sangre,
         ]);
 
-        // Si viene de una cita web, vincular la cita al nuevo paciente
         if ($request->cita_web_id) {
             Cita::where('id', $request->cita_web_id)
                 ->where('origen', 'landing')
@@ -187,7 +184,7 @@ class PacienteController extends Controller
             'nota_medica'      => 'nullable|string',
             'direccion'        => 'nullable|string|max:255',
             'ocupacion'        => 'nullable|string|max:100',
-            'tipo_sangre' => 'nullable|string|max:5',
+            'tipo_sangre'      => 'nullable|string|max:5',
         ]);
 
         $apellidos = trim($request->apellido_paterno . ' ' . $request->apellido_materno);
@@ -209,10 +206,40 @@ class PacienteController extends Controller
             'nota_medica'      => $request->nota_medica,
             'direccion'        => $request->direccion,
             'ocupacion'        => $request->ocupacion,
-            'tipo_sangre' => $request->tipo_sangre,
+            'tipo_sangre'      => $request->tipo_sangre,
         ]);
 
         return redirect()->route('medico.pacientes.show', $paciente)
             ->with('success', 'Paciente actualizado correctamente.');
+    }
+
+    public function destroy(Paciente $paciente)
+    {
+        $medico = Auth::user()->medico;
+
+        if ($paciente->clinica_id !== $medico->clinica_id) {
+            abort(403);
+        }
+
+        // Eliminar registros relacionados primero
+        $paciente->citas()->delete();
+        $paciente->recetas()->each(function($r) {
+            $r->items()->delete();
+            $r->delete();
+        });
+        $paciente->historiales()->delete();
+        $paciente->tratamientosEsteticos()->each(function($t) {
+            $t->zonas()->delete();
+            $t->delete();
+        });
+        $paciente->facturas()->each(function($f) {
+            $f->items()->delete();
+            $f->delete();
+        });
+
+        $paciente->delete();
+
+        return redirect()->route('medico.pacientes.index')
+            ->with('success', 'Paciente eliminado correctamente.');
     }
 }
