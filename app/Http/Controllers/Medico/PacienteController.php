@@ -232,7 +232,7 @@ class PacienteController extends Controller
             $t->zonas()->delete();
             $t->delete();
         });
-        $paciente->facturas()->each(function($f) {
+        \App\Models\Factura::where('paciente_id', $paciente->id)->each(function($f) {
             $f->items()->delete();
             $f->delete();
         });
