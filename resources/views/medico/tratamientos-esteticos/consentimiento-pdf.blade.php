@@ -24,7 +24,7 @@
   .campo-label { font-size: 9px; font-weight: 700; color: #374151; }
   .campo-line { border-bottom: 1px solid #94a3b8; min-width: 80px; display: inline-block; padding: 0 4px; font-size: 9px; color: #1e293b; }
   .punto { margin-bottom: 7px; line-height: 1.55; }
-  .punto-num { font-weight: 700; font-size: 9.5px; color: #1e293b; }
+  .punto-num { font-weight: 700; font-size: 10.5px; color: #1e293b; }
   .punto-text { font-size: 10.5px; color: #374151; text-align: justify; }
   .punto-text strong { color: #1e293b; }
   .sub-item { padding-left: 10px; margin-top: 3px; font-size: 10px; color: #374151; line-height: 1.5; text-align: justify; }

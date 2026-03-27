@@ -366,7 +366,7 @@ document.getElementById('modal-expediente').addEventListener('click', function(e
                     <div style="font-size:12px;color:#64748b;">{{ \Carbon\Carbon::parse($receta->fecha)->format('d/m/Y') }}</div>
                     <div style="font-size:11px;color:#64748b;">{{ $receta->items->count() }} medicamento(s)</div>
                 </div>
-                <a href="{{ route('recetas.pdf', $receta) }}" target="_blank" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#d1fae5;color:#059669;text-decoration:none;">PDF</a>
+                <a href="{{ route('medico.recetas.pdf', $receta) }}" target="_blank" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#d1fae5;color:#059669;text-decoration:none;">PDF</a>
             </div>
             @empty
             <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">Sin recetas registradas</div>
