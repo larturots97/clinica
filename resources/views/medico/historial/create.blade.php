@@ -112,6 +112,14 @@
                         <div style="font-size:11px;color:#64748b;">{{ $pacienteSeleccionado->expediente }}</div>
                     </div>
                 </div>
+                @if($pacienteSeleccionado->tipo_sangre)
+                <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+                    <span style="color:#64748b;">Tipo de sangre:</span>
+                    <span style="font-weight:700;color:#e11d48;background:#fee2e2;padding:2px 10px;border-radius:20px;">
+                        {{ $pacienteSeleccionado->tipo_sangre }}
+                    </span>
+                </div>
+                @endif
                 @if($pacienteSeleccionado->alergias)
                 <div style="margin-top:10px;background:#fee2e2;border-radius:7px;padding:8px 10px;font-size:12px;color:#991b1b;">
                     <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i>

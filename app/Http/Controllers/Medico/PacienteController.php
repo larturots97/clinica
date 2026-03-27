@@ -123,6 +123,8 @@ class PacienteController extends Controller
             'tipo_piel'          => 'nullable|array',
             'condiciones_piel'   => 'nullable|array',
             'nota_medica'        => 'nullable|string',
+            'tipo_sangre' => 'nullable|string|max:5',
+
         ]);
 
         $apellidos = trim($request->apellido_paterno . ' ' . $request->apellido_materno);
@@ -147,6 +149,7 @@ class PacienteController extends Controller
             'condiciones_piel'   => $request->condiciones_piel ?? [],
             'antecedentes_extra' => $request->antecedentes_extra ?? [],
             'nota_medica'        => $request->nota_medica,
+            'tipo_sangre' => $request->tipo_sangre,
         ]);
 
         // Si viene de una cita web, vincular la cita al nuevo paciente
@@ -184,6 +187,7 @@ class PacienteController extends Controller
             'nota_medica'      => 'nullable|string',
             'direccion'        => 'nullable|string|max:255',
             'ocupacion'        => 'nullable|string|max:100',
+            'tipo_sangre' => 'nullable|string|max:5',
         ]);
 
         $apellidos = trim($request->apellido_paterno . ' ' . $request->apellido_materno);
@@ -205,6 +209,7 @@ class PacienteController extends Controller
             'nota_medica'      => $request->nota_medica,
             'direccion'        => $request->direccion,
             'ocupacion'        => $request->ocupacion,
+            'tipo_sangre' => $request->tipo_sangre,
         ]);
 
         return redirect()->route('medico.pacientes.show', $paciente)
