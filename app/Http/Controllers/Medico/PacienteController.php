@@ -215,24 +215,4 @@ class PacienteController extends Controller
         return redirect()->route('medico.pacientes.show', $paciente)
             ->with('success', 'Paciente actualizado correctamente.');
     }
-        public function destroy(Paciente $paciente)
-{
-    $medico = Auth::user()->medico;
-
-    if ($paciente->clinica_id !== $medico->clinica_id) {
-        abort(403);
-    }
-
-    // Eliminar registros relacionados primero
-    $paciente->citas()->delete();
-    $paciente->recetas()->each(function($r) { $r->items()->delete(); $r->delete(); });
-    $paciente->historiales()->delete();
-    $paciente->tratamientosEsteticos()->each(function($t) { $t->zonas()->delete(); $t->delete(); });
-    $paciente->facturas()->each(function($f) { $f->items()->delete(); $f->delete(); });
-
-    $paciente->delete();
-
-    return redirect()->route('medico.pacientes.index')
-        ->with('success', 'Paciente eliminado correctamente.');
-}
 }

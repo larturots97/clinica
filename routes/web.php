@@ -60,8 +60,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pacientes/{paciente}/edit', [\App\Http\Controllers\Medico\PacienteController::class, 'edit'])->name('pacientes.edit');
         Route::put('/pacientes/{paciente}', [\App\Http\Controllers\Medico\PacienteController::class, 'update'])->name('pacientes.update');
         Route::get('/pacientes/{paciente}', [\App\Http\Controllers\Medico\PacienteController::class, 'show'])->name('pacientes.show');
-        Route::delete('/pacientes/{paciente}', [\App\Http\Controllers\Medico\PacienteController::class, 'destroy'])->name('pacientes.destroy');
-
+        
 
         Route::get('/historial', [\App\Http\Controllers\Medico\HistorialController::class, 'index'])->name('historial.index');
         Route::get('/historial/create', [\App\Http\Controllers\Medico\HistorialController::class, 'create'])->name('historial.create');
