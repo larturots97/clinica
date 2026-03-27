@@ -376,6 +376,7 @@ SVG;
             'fitzpatrick'      => $paciente->fitzpatrick,
             'tipo_piel'        => $paciente->tipo_piel ?? [],
             'condiciones_piel' => $paciente->condiciones_piel ?? [],
+            'tipo_sangre'     => $paciente->tipo_sangre,
         ]);
     }
 }

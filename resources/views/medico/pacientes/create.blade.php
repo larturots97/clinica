@@ -16,6 +16,7 @@
       <span>Registrando a <strong>{{ $citaWeb->nombre_visitante }}</strong> desde solicitud web. La cita quedará vinculada automáticamente.</span>
   </div>
   @endif
+
 <div style="display:grid;grid-template-columns:1fr 340px;gap:18px;">
 
   {{-- COLUMNA PRINCIPAL --}}
@@ -70,7 +71,7 @@
             @endforeach
           </select>
         </div>
-        <div style="grid-column:span 3;">
+        <div style="grid-column:span 2;">
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:5px;">Correo electrónico</label>
           <input type="email" name="email" value="{{ old('email') }}"
             style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none;box-sizing:border-box;">

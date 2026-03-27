@@ -372,8 +372,6 @@ label-field{font-size:12px;font-weight:600;color:#374151;display:block;margin-bo
       <span style="width:26px;height:26px;border-radius:7px;background:#f3e8ff;color:#9333ea;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-box" style="font-size:11px;"></i></span>
       Producto Utilizado
     </h4>
-
-    {{-- Selector del inventario --}}
     <div style="margin-bottom:16px;padding:14px;background:#faf5ff;border-radius:10px;border:1px solid #e9d5ff;">
       <label style="font-size:12px;font-weight:700;color:#7c3aed;display:block;margin-bottom:10px;">
         <i class="fa-solid fa-boxes-stacked" style="margin-right:5px;"></i>
@@ -414,8 +412,6 @@ label-field{font-size:12px;font-weight:600;color:#374151;display:block;margin-bo
         <div style="color:#dc2626;font-size:12px;margin-top:6px;"><i class="fa-solid fa-circle-xmark" style="margin-right:4px;"></i>{{ $message }}</div>
       @enderror
     </div>
-
-    {{-- Datos manuales --}}
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
       <div>
         <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Marca / Nombre</label>
@@ -746,7 +742,6 @@ function selFitz(n,el){
   document.getElementById('fitzInput').value=n;
 }
 
-// ── CORREGIDO: usar onclick en lugar de addEventListener para que sea sobreescribible ──
 document.querySelectorAll('.ck-item').forEach(item => {
   const cb = item.querySelector('input[type=checkbox]');
   if (cb && cb.checked) item.classList.add('on');
@@ -875,7 +870,7 @@ async function cargarDatosPaciente(pacienteId) {
   try {
     const res  = await fetch(`/medico/tratamientos-esteticos/paciente/${pacienteId}/datos`);
     const data = await res.json();
-    const tieneDatos = data.fitzpatrick || data.tipo_piel?.length || data.condiciones_piel?.length;
+    const tieneDatos = data.fitzpatrick || data.tipo_piel?.length || data.condiciones_piel?.length || data.tipo_sangre;
     if (!tieneDatos) { desbloquearEvaluacion(); return; }
 
     // Fitzpatrick
@@ -915,7 +910,7 @@ async function cargarDatosPaciente(pacienteId) {
       item.onclick = e => e.preventDefault();
     });
 
-    mostrarBannerEvaluacion();
+    mostrarBannerEvaluacion(data.tipo_sangre);
   } catch(e) {
     desbloquearEvaluacion();
   }
@@ -942,13 +937,27 @@ function desbloquearEvaluacion() {
   quitarBannerEvaluacion();
 }
 
-function mostrarBannerEvaluacion() {
+function mostrarBannerEvaluacion(tipoSangre) {
   quitarBannerEvaluacion();
+  const card = document.getElementById('cardEvaluacion');
+
+  // Banner principal
   const banner = document.createElement('div');
   banner.id    = 'banner-evaluacion';
-  banner.style.cssText = 'background:#ede9fe;border:1px solid #c4b5fd;color:#6d28d9;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:7px;';
-  banner.innerHTML = '<i class="fa-solid fa-lock" style="font-size:11px;"></i> Datos de evaluación clínica cargados del expediente — solo lectura';
-  const card = document.getElementById('cardEvaluacion');
+  banner.style.cssText = 'margin-bottom:12px;';
+  banner.innerHTML = `
+    <div style="background:#ede9fe;border:1px solid #c4b5fd;color:#6d28d9;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:8px;">
+      <i class="fa-solid fa-lock" style="font-size:11px;"></i> Datos de evaluación clínica cargados del expediente — solo lectura
+    </div>
+    ${tipoSangre ? `
+    <div style="display:flex;align-items:center;gap:10px;background:#fff1f2;border:1px solid #fecdd3;border-radius:8px;padding:8px 14px;">
+      <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">Tipo de sangre</span>
+      <span style="background:#fee2e2;color:#b91c1c;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px;">
+        🩸 ${tipoSangre}
+      </span>
+    </div>` : ''}
+  `;
+
   if (card) card.insertBefore(banner, card.firstChild);
 }
 
@@ -957,7 +966,6 @@ function quitarBannerEvaluacion() {
   if (b) b.remove();
 }
 
-// Si hay paciente preseleccionado al cargar la página
 document.addEventListener('DOMContentLoaded', () => {
   const sel = document.querySelector('select[name="paciente_id"]');
   if (sel?.value) cargarDatosPaciente(sel.value);
