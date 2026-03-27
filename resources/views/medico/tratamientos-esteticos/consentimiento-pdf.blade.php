@@ -25,9 +25,9 @@
   .campo-line { border-bottom: 1px solid #94a3b8; min-width: 80px; display: inline-block; padding: 0 4px; font-size: 9px; color: #1e293b; }
   .punto { margin-bottom: 7px; line-height: 1.55; }
   .punto-num { font-weight: 700; font-size: 9.5px; color: #1e293b; }
-  .punto-text { font-size: 9px; color: #374151; text-align: justify; }
+  .punto-text { font-size: 10.5px; color: #374151; text-align: justify; }
   .punto-text strong { color: #1e293b; }
-  .sub-item { padding-left: 10px; margin-top: 3px; font-size: 9px; color: #374151; line-height: 1.5; text-align: justify; }
+  .sub-item { padding-left: 10px; margin-top: 3px; font-size: 10px; color: #374151; line-height: 1.5; text-align: justify; }
   .sub-item strong { color: #1e293b; }
   .sep { border: none; border-top: 1.5px solid #b08d6e; margin: 10px 0; }
   .sep-light { border: none; border-top: 1px dashed #e2e8f0; margin: 6px 0; }
