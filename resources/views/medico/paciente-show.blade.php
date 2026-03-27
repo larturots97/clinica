@@ -33,11 +33,11 @@ $antecedentesLabels = [
             style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#ffe4e6;color:#e11d48;text-decoration:none;">
             <i class="fa-solid fa-file-medical"></i> Nueva consulta
         </a>
-        <a href="#"
+        <a href="{{ route('medico.recetas.create', ['paciente_id' => $paciente->id]) }}"
             style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#ede9fe;color:#7c3aed;text-decoration:none;">
             <i class="fa-solid fa-prescription"></i> Nueva receta
         </a>
-        <a href="#"
+        <a href="{{ route('medico.pagos.create', ['paciente_id' => $paciente->id]) }}"
             style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#d1fae5;color:#059669;text-decoration:none;">
             <i class="fa-solid fa-credit-card"></i> Nuevo pago
         </a>
@@ -357,7 +357,7 @@ document.getElementById('modal-expediente').addEventListener('click', function(e
                     <span style="width:26px;height:26px;border-radius:7px;background:#ede9fe;color:#7c3aed;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-prescription" style="font-size:11px;"></i></span>
                     Recetas
                 </span>
-                <a href="#" style="font-size:12px;color:#0ea5a0;font-weight:500;text-decoration:none;">+ Nueva receta</a>
+                <a href="{{ route('medico.recetas.create', ['paciente_id' => $paciente->id]) }}" style="font-size:12px;color:#0ea5a0;font-weight:500;text-decoration:none;">+ Nueva receta</a>
             </div>
             @forelse($paciente->recetas->take(3) as $receta)
             <div style="padding:12px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:11px;">
