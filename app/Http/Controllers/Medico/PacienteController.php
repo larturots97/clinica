@@ -71,7 +71,10 @@ class PacienteController extends Controller
             'citas'       => fn($q) => $q->where('medico_id', $medico->id)->orderBy('fecha_hora', 'desc'),
         ]);
 
-        $esMedicoEstetico = $medico->especialidad?->nombre === 'Medicina Estética';
+        $esMedicoEstetico = str_contains(
+            strtolower($medico->especialidad?->nombre ?? ''),
+            'estetica'
+        );
         $tratamientos = [];
 
         if ($esMedicoEstetico) {
