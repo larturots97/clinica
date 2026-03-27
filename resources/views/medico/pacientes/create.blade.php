@@ -61,6 +61,15 @@
           <input type="text" name="telefono" value="{{ old('telefono') }}"
             style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none;box-sizing:border-box;">
         </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:5px;">Tipo de sangre</label>
+          <select name="tipo_sangre" style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none;box-sizing:border-box;">
+            <option value="">No especificado</option>
+            @foreach(['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $tipo)
+            <option value="{{ $tipo }}" {{ old('tipo_sangre') == $tipo ? 'selected' : '' }}>{{ $tipo }}</option>
+            @endforeach
+          </select>
+        </div>
         <div style="grid-column:span 3;">
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;display:block;margin-bottom:5px;">Correo electrónico</label>
           <input type="email" name="email" value="{{ old('email') }}"
