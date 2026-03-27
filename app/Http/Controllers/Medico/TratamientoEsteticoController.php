@@ -223,8 +223,9 @@ class TratamientoEsteticoController extends Controller
     $logoBase64  = $this->imagenBase64($config?->logo);
 
     $pdf = Pdf::loadView('medico.tratamientos-esteticos.pdf', compact('tratamiento', 'mapaBase64', 'config', 'logoBase64'))
-        ->setOptions(['isRemoteEnabled' => true, 'defaultFont' => 'Arial'])
+        ->setOptions(['isRemoteEnabled' => true, 'defaultFont' => 'Arial','isGdEnabled'     => false,])
         ->setPaper('letter', 'portrait');
+        
 
     return $pdf->stream('historial-estetico-' . $tratamiento->id . '.pdf');
 }

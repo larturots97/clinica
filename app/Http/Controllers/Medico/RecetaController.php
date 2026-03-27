@@ -118,6 +118,7 @@ class RecetaController extends Controller
             'margin_bottom'   => 0,
             'margin_left'     => 0,
             'margin_right'    => 0,
+            'isGdEnabled'     => false,
         ])
         ->setPaper('letter', 'portrait');
 
