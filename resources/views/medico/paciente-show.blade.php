@@ -50,8 +50,9 @@ $antecedentesLabels = [
         <form action="{{ route('medico.pacientes.destroy', $paciente) }}" method="POST" style="display:inline;">
             @csrf
             @method('DELETE')
-            <button type="submit"
-                onclick="return confirm('¿Eliminar este paciente? Esta acción no se puede deshacer.')"
+            {{-- BOTÓN que abre el modal --}}
+            <button type="button"
+                onclick="document.getElementById('modal-eliminar').style.display='flex'"
                 style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;font-family:inherit;">
                 <i class="fa-solid fa-trash"></i> Eliminar paciente
             </button>
@@ -430,5 +431,35 @@ document.getElementById('modal-expediente').addEventListener('click', function(e
 
     </div>
 </div>
+    {{-- MODAL ELIMINAR PACIENTE --}}
+    <div id="modal-eliminar" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:white;border-radius:12px;border-left:4px solid #dc2626;border-top:0.5px solid #e2e8f0;border-right:0.5px solid #e2e8f0;border-bottom:0.5px solid #e2e8f0;padding:24px;max-width:380px;width:100%;">
+            <p style="font-size:15px;font-weight:600;color:#1e293b;margin:0 0 8px;">Eliminar paciente</p>
+            <p style="font-size:13px;color:#64748b;margin:0;line-height:1.5;">
+                <strong style="color:#1e293b;">{{ $paciente->nombre_completo }}</strong> y todo su historial clínico será eliminado permanentemente.
+            </p>
+            <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;">
+                <button type="button"
+                    onclick="document.getElementById('modal-eliminar').style.display='none'"
+                    style="padding:8px 18px;border-radius:8px;font-size:13px;background:transparent;border:1px solid #e2e8f0;color:#64748b;cursor:pointer;font-family:inherit;">
+                    Cancelar
+                </button>
+                <form action="{{ route('medico.pacientes.destroy', $paciente) }}" method="POST" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                        style="padding:8px 18px;border-radius:8px;font-size:13px;background:#dc2626;border:none;color:white;font-weight:600;cursor:pointer;font-family:inherit;">
+                        Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('modal-eliminar').addEventListener('click', function(e) {
+        if (e.target === this) this.style.display = 'none';
+    });
+    </script>
 
 @endsection
