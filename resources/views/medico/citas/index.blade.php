@@ -381,21 +381,28 @@
         <span x-text="errorMsg"></span>
       </div>
 
-      {{-- Botones --}}
+     {{-- Botones --}}
       <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px;border-top:1px solid #f1f5f9;margin-top:4px;">
-        <button type="button" @click="modalOpen=false"
-          style="padding:9px 18px;background:#f1f5f9;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#374151;"
-          onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-          Cancelar
-        </button>
-        <button type="submit" :disabled="guardando || !form.hora"
-          style="padding:9px 22px;background:#9333ea;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;"
-          :style="(guardando || !form.hora) ? 'opacity:0.45;cursor:not-allowed;' : ''"
-          onmouseover="if(!this.disabled)this.style.background='#7c3aed'"
-          onmouseout="if(!this.disabled)this.style.background='#9333ea'">
-          <span x-show="guardando" style="margin-right:4px;"><i class="fa-solid fa-spinner fa-spin"></i></span>
-          <span x-text="guardando ? 'Guardando...' : 'Agendar cita'"></span>
-        </button>
+          <button type="button" @click="modalOpen=false"
+              style="padding:9px 18px;background:#f1f5f9;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#374151;">
+              Cancelar
+          </button>
+          <button type="submit"
+              :disabled="guardando || !form.hora"
+              :style="{
+                  padding: '9px 22px',
+                  background: (guardando || !form.hora) ? '#c4b5fd' : '#9333ea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: (guardando || !form.hora) ? 'not-allowed' : 'pointer',
+                  opacity: 1
+              }">
+              <span x-show="guardando" style="margin-right:4px;"><i class="fa-solid fa-spinner fa-spin"></i></span>
+              <span x-text="guardando ? 'Guardando...' : 'Agendar cita'"></span>
+          </button>
       </div>
 
     </form>
